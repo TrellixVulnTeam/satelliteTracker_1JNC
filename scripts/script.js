@@ -96,6 +96,14 @@
         document.body.appendChild(stats.dom);
     }*/
 	
+	function satPath() {
+		/* need to grab the satellite plot points and create a line with them.
+		I want to separate out the part of the path that is above the ground site
+		so the path is a different color during that time. I will need to allow for
+		the ground site to be changed and the path colors to be re-rendered.
+		*/
+	}
+	
     // Draw a line along the X axis, unused
     function createDistanceLine() {
         var lineMat = new THREE.LineBasicMaterial({
@@ -147,11 +155,12 @@
         setupControls();
         createEarth();
         createSatellites();
-        createStats();
+        //createStats();
 		/* TODO: create function to take long, lat, and elev and creates a line between points
 		this can probably be done by having the python save the points to a .csv and then have
 		this function pull from the same file.
 		*/
+		satPath();
         //createDistanceLine();
 
     }
