@@ -2,7 +2,7 @@
     //ensure strict mode
     'use strict';
     var canvas;
-    var scene, camera, renderer, controls, manager, stats;
+    var scene, camera, renderer, controls, manager; // , stats;
     var windowW = window.innerWidth;
     var sceneW = window.innerWidth; //       /1.8; lets it be a bit bigger than a half
     var windowH = window.innerHeight;
@@ -26,7 +26,7 @@
         renderer.setSize(sceneW, windowH);
         renderer.setClearColor(0x181818, 1);
         camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 10000);
-        camera.position.z = 50;
+        camera.position.z = 75;
         renderer.shadowMap.enabled = false;
         manager = new THREE.LoadingManager();
         manager.onLoad = function () {
@@ -49,7 +49,7 @@
     function createEarth() {
         var planet = new THREE.SphereGeometry(10, 128, 128);
         planet.rotateX((-23.4 * Math.PI) / 180);
-        var planetMat = new THREE.MeshBasicMaterial({ color: 0xF1F1D4 });
+        var planetMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
         var TextureLoader = new THREE.TextureLoader(manager);
         TextureLoader.load('img/4k.jpg', function (texture) {
             texture.anisotropy = 8;
@@ -90,11 +90,11 @@
     }
 	
     // Show FPS stats in the corner
-    function createStats() {
+    /*function createStats() {
         stats = new Stats();
         stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
         document.body.appendChild(stats.dom);
-    }
+    }*/
 	
     // Draw a line along the X axis, unused
     function createDistanceLine() {
@@ -148,6 +148,10 @@
         createEarth();
         createSatellites();
         createStats();
+		/* TODO: create function to take long, lat, and elev and creates a line between points
+		this can probably be done by having the python save the points to a .csv and then have
+		this function pull from the same file.
+		*/
         //createDistanceLine();
 
     }
@@ -174,12 +178,12 @@
     function render() {
         requestAnimationFrame(render);
         controls.update();
-        stats.begin();
+        //stats.begin();
         if (mouse.x < sceneW) {
             checkForRaycasts();
         }
         renderer.render(scene, camera);
-        stats.end();
+        //stats.end();
     }
 	
 	//https://d3-wiki.readthedocs.io/zh_CN/master/CSV/
