@@ -11,6 +11,7 @@
     var mouse = new THREE.Vector2();
     var parseDate = d3.time.format("%m/%d/%Y").parse;
     var sats = []; //the array holding all the satellite data after parsing csv
+	var newSats = [];
     function onMouseMove(event) {
         // calculate mouse position in normalized device coordinates
         // (-1 to +1) for both components
@@ -69,7 +70,7 @@
     }
 	
     // Populate the sats array, calculate orbital elements, put into scene
-    function createSatellites() {
+    /*function createSatellites() {
         var color = d3.scale.category20c();
         for (var i = 0; i < sats.length; i++) {
             sats[i].xRad = sats[i].sma;
@@ -87,7 +88,7 @@
             scene.add(sats[i].mesh);
             //console.log(sats);
         }
-    }
+    }*/
 	
     // Show FPS stats in the corner
     /*function createStats() {
@@ -102,16 +103,33 @@
 		so the path is a different color during that time. I will need to allow for
 		the ground site to be changed and the path colors to be re-rendered.
 		*/
+		var material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+		var geometry = new THREE.Geometry();
+		var r, lat, lon, x, y, z;
+		for (var i = 0; i < newSats.length; i++) {
+			r = ((newSats[i].elevation+6378)*10/6378)
+			lat = newSats[i].latitude
+			lon = newSats[i].longitude
+			x = r*Math.cos(lat)*Math.cos(lon)
+			y = r*Math.cos(lat)*Math.sin(lon)
+			z = r*Math.sin(lat)
+			geometry.vertices.push(new THREE.Vector3( x, z, y) );
+		}
+        geometry.rotateX((-23.4 * Math.PI) / 180);
+		var line = new THREE.Line( geometry, material );
+		scene.add( line );	
 	}
 	
-    // Draw a line along the X axis, unused
+    // Draw a line along the Y axis (shows the poles)
     function createDistanceLine() {
         var lineMat = new THREE.LineBasicMaterial({
             color: 0xFFC400
         });
         var distanceGeo = new THREE.Geometry();
-        distanceGeo.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(100, 0, 0));
+        distanceGeo.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 15, 0));
+		distanceGeo.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -15, 0));
         var line = new THREE.Line(distanceGeo, lineMat);
+		line.rotateX((-23.4 * Math.PI) / 180);
         scene.add(line);
     }
     
@@ -154,14 +172,10 @@
         setupScene();
         setupControls();
         createEarth();
-        createSatellites();
+        //createSatellites();
         //createStats();
-		/* TODO: create function to take long, lat, and elev and creates a line between points
-		this can probably be done by having the python save the points to a .csv and then have
-		this function pull from the same file.
-		*/
 		satPath();
-        //createDistanceLine();
+        createDistanceLine();
 
     }
 
@@ -194,9 +208,20 @@
         renderer.render(scene, camera);
         //stats.end();
     }
+	d3.csv('position.csv', function (d) {
+        return {
+			latitude: +d.latitude,
+            longitude: +d.longitude,
+            elevation: +d.elevation,
+            aboveHorizon: d.aboveHorizon
+        };
+    }, function (data) {
+        newSats = data.slice(); //copy 
+		init();
+    });
 	
 	//https://d3-wiki.readthedocs.io/zh_CN/master/CSV/
-    d3.csv('satellites.csv', function (d) {
+   /* d3.csv('satellites.csv', function (d) {
         return {
             norad: d.norad,
             name: d.name,
@@ -220,5 +245,5 @@
     }, function (data) {
         sats = data.slice(); //copy 
         init();
-    });
+    });*/
 })(window, document);
