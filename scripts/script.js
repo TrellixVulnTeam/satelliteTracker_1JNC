@@ -27,7 +27,7 @@
         renderer.setSize(sceneW, windowH);
         renderer.setClearColor(0x181818, 1);
         camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 10000);
-        camera.position.z = 75;
+        camera.position.z = 30;
         renderer.shadowMap.enabled = false;
         manager = new THREE.LoadingManager();
         manager.onLoad = function () {
@@ -49,7 +49,7 @@
     //Create sphere geometry and put the earth outline image onto it
     function createEarth() {
         var planet = new THREE.SphereGeometry(10, 128, 128);
-        planet.rotateX((-23.4 * Math.PI) / 180);
+        //planet.rotateX((-23.4 * Math.PI) / 180); use this to rotate the globe so the poles are where they are in reality
         var planetMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
         var TextureLoader = new THREE.TextureLoader(manager);
         TextureLoader.load('img/4k.jpg', function (texture) {
@@ -57,9 +57,9 @@
             planetMat.map = texture;
             planetMat.needsUpdate = false;
         });
-        var outlineMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+        var outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide });
         var outlineMesh = new THREE.Mesh(planet, outlineMaterial);
-        outlineMesh.scale.multiplyScalar(1.002);
+        outlineMesh.scale.multiplyScalar(1.004);
         var planetMesh = new THREE.Mesh(planet, planetMat);
         planetMesh.add(outlineMesh);
         // displays x, y, and z axes
@@ -115,7 +115,7 @@
 			z = r*Math.sin(lat)
 			geometry.vertices.push(new THREE.Vector3( x, z, y) );
 		}
-        geometry.rotateX((-23.4 * Math.PI) / 180);
+        //geometry.rotateX((-23.4 * Math.PI) / 180); use this if the globe is rotated to show the true position of the poles
 		var line = new THREE.Line( geometry, material );
 		scene.add( line );	
 	}
@@ -129,7 +129,7 @@
         distanceGeo.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 15, 0));
 		distanceGeo.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -15, 0));
         var line = new THREE.Line(distanceGeo, lineMat);
-		line.rotateX((-23.4 * Math.PI) / 180);
+		//line.rotateX((-23.4 * Math.PI) / 180); use this if the globe is rotated to show the true position of the poles
         scene.add(line);
     }
     
@@ -175,7 +175,7 @@
         //createSatellites();
         //createStats();
 		satPath();
-        createDistanceLine();
+        //createDistanceLine();
 
     }
 
