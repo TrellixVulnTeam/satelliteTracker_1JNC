@@ -39,7 +39,7 @@
     function setupControls() {
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.08;
+        controls.autoRotateSpeed = 0.04;
         controls.rotateSpeed = 0.2;
         controls.enableDamping = true;
         controls.dampingFactor = 0.3;
@@ -49,7 +49,7 @@
     //Create sphere geometry and put the earth outline image onto it
     function createEarth() {
         var planet = new THREE.SphereGeometry(10, 128, 128);
-        //planet.rotateX((-23.4 * Math.PI) / 180); use this to rotate the globe so the poles are where they are in reality
+        //planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
         var planetMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
         var TextureLoader = new THREE.TextureLoader(manager);
         TextureLoader.load('img/4k.jpg', function (texture) {
@@ -68,6 +68,26 @@
         // planetMesh.add( axes );
         scene.add(planetMesh);
     }
+	
+	function groundSite() {
+		var r = 10;
+		var lat = 41.76
+		var lon = -111.82
+		var phi   = (90-lat)*(Math.PI/180)
+		var theta = (lon+180)*(Math.PI/180)
+
+		var x = -((r) * Math.sin(phi)*Math.cos(theta))
+		var y = ((r) * Math.cos(phi))
+		var z = ((r) * Math.sin(phi)*Math.sin(theta))
+		var geometry = new THREE.BoxGeometry( .05, .05, 1 );
+		var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+		var cube = new THREE.Mesh( geometry, material );
+		cube.position.set(x, y, z);
+		cube.lookAt(new THREE.Vector3(0, 0, 0));
+		scene.add(cube);
+		
+		
+	}
 	
     // Populate the sats array, calculate orbital elements, put into scene
     /*function createSatellites() {
@@ -98,25 +118,54 @@
     }*/
 	
 	function satPath() {
-		/* need to grab the satellite plot points and create a line with them.
-		I want to separate out the part of the path that is above the ground site
-		so the path is a different color during that time. I will need to allow for
-		the ground site to be changed and the path colors to be re-rendered.
-		*/
 		var material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
 		var geometry = new THREE.Geometry();
+		var prev = 0, current;
 		var r, lat, lon, x, y, z;
 		for (var i = 0; i < newSats.length; i++) {
+			current = newSats[i].horizon;
+			if (newSats[i].second > 30) {
+				newSats[i].second = 0;
+				newSats[i].minute += 1;
+			}
+			else {
+				newSats[i].second = 0;
+			}
 			r = ((newSats[i].elevation+6378)*10/6378)
 			lat = newSats[i].latitude
 			lon = newSats[i].longitude
-			x = r*Math.cos(lat)*Math.cos(lon)
-			y = r*Math.cos(lat)*Math.sin(lon)
-			z = r*Math.sin(lat)
-			geometry.vertices.push(new THREE.Vector3( x, z, y) );
+			var phi   = (90-lat)*(Math.PI/180)
+			var theta = (lon+180)*(Math.PI/180)
+
+			x = -((r) * Math.sin(phi)*Math.cos(theta))
+			z = ((r) * Math.sin(phi)*Math.sin(theta))
+			y = ((r) * Math.cos(phi))
+			if (current == 1 && prev == 0) {
+				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+				var line = new THREE.Line( geometry, material );
+				//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
+				scene.add( line );
+				var material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+				var geometry = new THREE.Geometry();
+				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+			}
+			else if (current == 0 && prev == 1) {
+				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+				var line = new THREE.Line( geometry, material );
+				//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
+				scene.add( line );
+				var material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+				var geometry = new THREE.Geometry();
+				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+			}
+			else {
+				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+			}
+			
+			prev = current;
 		}
-        //geometry.rotateX((-23.4 * Math.PI) / 180); use this if the globe is rotated to show the true position of the poles
 		var line = new THREE.Line( geometry, material );
+		//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
 		scene.add( line );	
 	}
 	
@@ -129,7 +178,7 @@
         distanceGeo.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 15, 0));
 		distanceGeo.vertices.push(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -15, 0));
         var line = new THREE.Line(distanceGeo, lineMat);
-		//line.rotateX((-23.4 * Math.PI) / 180); use this if the globe is rotated to show the true position of the poles
+		//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
         scene.add(line);
     }
     
@@ -175,6 +224,7 @@
         //createSatellites();
         //createStats();
 		satPath();
+		groundSite();
         //createDistanceLine();
 
     }
@@ -189,7 +239,7 @@
         //only first intersect
         if (intersects.length != 0) {
             if (print)
-                console.log(intersects);
+                //console.log(intersects);
             print = false;
             if (intersects[0].object.type == "Line") {
                 // intersects[0].object.material.color.set( 0xffff00 );
@@ -213,7 +263,13 @@
 			latitude: +d.latitude,
             longitude: +d.longitude,
             elevation: +d.elevation,
-            aboveHorizon: d.aboveHorizon
+			year: +d.year,
+			month: +d.month,
+			day: +d.day,
+			hour: +d.hour,
+			minute: +d.minute,
+			second: +d.second,
+            horizon: d.horizon
         };
     }, function (data) {
         newSats = data.slice(); //copy 
