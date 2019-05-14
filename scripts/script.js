@@ -4,14 +4,14 @@
     var canvas;
     var scene, camera, renderer, controls, manager; // , stats;
     var windowW = window.innerWidth;
-    var sceneW = window.innerWidth; //       /1.8; lets it be a bit bigger than a half
+    var sceneW = window.innerWidth; //      size of the whole screen, /1.8; would set it to be a little bit bigger than a half
     var windowH = window.innerHeight;
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
     var mouse = new THREE.Vector2();
     var parseDate = d3.time.format("%m/%d/%Y").parse;
-    var sats = []; //the array holding all the satellite data after parsing csv
-	var newSats = [];
+    var sats = [];
+	var newSats = []; //the array holding all the satellite data after parsing csv
     function onMouseMove(event) {
         // calculate mouse position in normalized device coordinates
         // (-1 to +1) for both components
@@ -69,6 +69,7 @@
         scene.add(planetMesh);
     }
 	
+	// creates a ground site at a specified latitude and longitude
 	function groundSite() {
 		var r = 10;
 		var lat = 41.76
@@ -117,6 +118,7 @@
         document.body.appendChild(stats.dom);
     }*/
 	
+	// creates the path of the satellite based on the information in the csv
 	function satPath() {
 		var material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
 		var geometry = new THREE.Geometry();
@@ -140,6 +142,7 @@
 			x = -((r) * Math.sin(phi)*Math.cos(theta))
 			z = ((r) * Math.sin(phi)*Math.sin(theta))
 			y = ((r) * Math.cos(phi))
+			// if the satellite path becomes visible to the groundsite's position, change the path color to red
 			if (current == 1 && prev == 0) {
 				geometry.vertices.push(new THREE.Vector3( x, y, z) );
 				var line = new THREE.Line( geometry, material );
@@ -149,6 +152,7 @@
 				var geometry = new THREE.Geometry();
 				geometry.vertices.push(new THREE.Vector3( x, y, z) );
 			}
+			// if we transition from a visible path to not being in line of site of the satellite, change back to a blue path
 			else if (current == 0 && prev == 1) {
 				geometry.vertices.push(new THREE.Vector3( x, y, z) );
 				var line = new THREE.Line( geometry, material );
@@ -258,6 +262,7 @@
         renderer.render(scene, camera);
         //stats.end();
     }
+	// pulls the satellite data from the .csv and populates a list with it
 	d3.csv('position.csv', function (d) {
         return {
 			latitude: +d.latitude,
