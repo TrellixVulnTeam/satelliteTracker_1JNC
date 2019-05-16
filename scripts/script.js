@@ -2,6 +2,7 @@
     //ensure strict mode
     'use strict';
     var canvas;
+	var vertexColors= THREE.VertexColors
     var scene, camera, renderer, controls, manager; // , stats;
     var windowW = window.innerWidth;
     var sceneW = window.innerWidth; //      size of the whole screen, /1.8; would set it to be a little bit bigger than a half
@@ -25,7 +26,7 @@
         canvas = document.getElementById("scene");
         renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
         renderer.setSize(sceneW, windowH);
-        renderer.setClearColor(0x181818, 1);
+        renderer.setClearColor(0x000000, 1);
         camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 10000);
         camera.position.z = 30;
         renderer.shadowMap.enabled = false;
@@ -50,14 +51,14 @@
     function createEarth() {
         var planet = new THREE.SphereGeometry(10, 128, 128);
         //planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
-        var planetMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+        var planetMat = new THREE.MeshBasicMaterial({color: 0xffffff});
         var TextureLoader = new THREE.TextureLoader(manager);
         TextureLoader.load('img/4k.jpg', function (texture) {
             texture.anisotropy = 8;
             planetMat.map = texture;
             planetMat.needsUpdate = false;
         });
-        var outlineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide });
+        var outlineMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
         var outlineMesh = new THREE.Mesh(planet, outlineMaterial);
         outlineMesh.scale.multiplyScalar(1.004);
         var planetMesh = new THREE.Mesh(planet, planetMat);
@@ -69,9 +70,13 @@
         scene.add(planetMesh);
     }
 	
+	function test() {
+		
+	}
+	
 	// creates a ground site at a specified latitude and longitude
 	function groundSite() {
-		var r = 10;
+		var r = (1.403+6378)*10/6378;
 		var lat = 41.76
 		var lon = -111.82
 		var phi   = (90-lat)*(Math.PI/180)
@@ -80,14 +85,12 @@
 		var x = -((r) * Math.sin(phi)*Math.cos(theta))
 		var y = ((r) * Math.cos(phi))
 		var z = ((r) * Math.sin(phi)*Math.sin(theta))
-		var geometry = new THREE.BoxGeometry( .05, .05, 1 );
-		var material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+		var geometry = new THREE.BoxGeometry(.05, .05, 1);
+		var material = new THREE.MeshBasicMaterial({color: 0xffff00});
 		var cube = new THREE.Mesh( geometry, material );
 		cube.position.set(x, y, z);
 		cube.lookAt(new THREE.Vector3(0, 0, 0));
 		scene.add(cube);
-		
-		
 	}
 	
     // Populate the sats array, calculate orbital elements, put into scene
@@ -120,11 +123,24 @@
 	
 	// creates the path of the satellite based on the information in the csv
 	function satPath() {
-		var material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+		var material = new THREE.LineBasicMaterial({color: 0x0000ff});
+		//https://stackoverflow.com/questions/26790345/vertex-colors-in-three-line
+		// tween.js			https://gist.github.com/vincent/4ce2f9f37b1ac846f84c
 		var geometry = new THREE.Geometry();
+		var group = new THREE.Group();
 		var prev = 0, current;
 		var r, lat, lon, x, y, z;
+		var satName = newSats[0].name
 		for (var i = 0; i < newSats.length; i++) {
+			if (newSats[i].name != satName) {
+				satName = newSats[i].name
+				var line = new THREE.Line( geometry, material );
+				group.add(line);
+				scene.add(group);
+				group = new THREE.Group();
+				var geometry = new THREE.Geometry();
+				var material = new THREE.LineBasicMaterial({color: 0x0000ff});
+			}
 			current = newSats[i].horizon;
 			if (newSats[i].second > 30) {
 				newSats[i].second = 0;
@@ -144,33 +160,33 @@
 			y = ((r) * Math.cos(phi))
 			// if the satellite path becomes visible to the groundsite's position, change the path color to red
 			if (current == 1 && prev == 0) {
-				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+				geometry.vertices.push(new THREE.Vector3(x, y, z));
 				var line = new THREE.Line( geometry, material );
 				//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
-				scene.add( line );
-				var material = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+				group.add( line );
+				var material = new THREE.LineBasicMaterial({color: 0xff0000});
 				var geometry = new THREE.Geometry();
-				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+				geometry.vertices.push(new THREE.Vector3( x, y, z));
 			}
 			// if we transition from a visible path to not being in line of site of the satellite, change back to a blue path
 			else if (current == 0 && prev == 1) {
-				geometry.vertices.push(new THREE.Vector3( x, y, z) );
-				var line = new THREE.Line( geometry, material );
+				geometry.vertices.push(new THREE.Vector3( x, y, z));
+				var line = new THREE.Line(geometry, material);
 				//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
-				scene.add( line );
-				var material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
+				group.add(line);
+				var material = new THREE.LineBasicMaterial({color: 0x0000ff});
 				var geometry = new THREE.Geometry();
-				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+				geometry.vertices.push(new THREE.Vector3(x, y, z));
 			}
 			else {
-				geometry.vertices.push(new THREE.Vector3( x, y, z) );
+				geometry.vertices.push(new THREE.Vector3(x, y, z));
 			}
-			
 			prev = current;
 		}
-		var line = new THREE.Line( geometry, material );
+		var line = new THREE.Line(geometry, material);
+		group.add(line);
 		//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
-		scene.add( line );	
+		scene.add(group);	
 	}
 	
     // Draw a line along the Y axis (shows the poles)
@@ -229,8 +245,8 @@
         //createStats();
 		satPath();
 		groundSite();
+		test();
         //createDistanceLine();
-
     }
 
     function checkForRaycasts() {
@@ -257,14 +273,16 @@
         controls.update();
         //stats.begin();
         if (mouse.x < sceneW) {
-            checkForRaycasts();
+            //checkForRaycasts();
         }
         renderer.render(scene, camera);
         //stats.end();
     }
+	
 	// pulls the satellite data from the .csv and populates a list with it
-	d3.csv('position.csv', function (d) {
+	d3.csv('data/position.csv', function (d) {
         return {
+			name: d.name,
 			latitude: +d.latitude,
             longitude: +d.longitude,
             elevation: +d.elevation,
