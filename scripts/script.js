@@ -28,7 +28,7 @@
         renderer.setSize(sceneW, windowH);
         renderer.setClearColor(0x000000, 1);
         camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 10000);
-        camera.position.z = 30;
+        camera.position.z = 22;
         renderer.shadowMap.enabled = false;
         manager = new THREE.LoadingManager();
         manager.onLoad = function () {
@@ -53,7 +53,7 @@
         //planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
         var planetMat = new THREE.MeshBasicMaterial({color: 0xffffff});
         var TextureLoader = new THREE.TextureLoader(manager);
-        TextureLoader.load('img/4k.jpg', function (texture) {
+        TextureLoader.load('img/marble.jpg', function (texture) {
             texture.anisotropy = 8;
             planetMat.map = texture;
             planetMat.needsUpdate = false;
@@ -69,10 +69,7 @@
         // planetMesh.add( axes );
         scene.add(planetMesh);
     }
-	
-	function test() {
-		
-	}
+
 	
 	// creates a ground site at a specified latitude and longitude
 	function groundSite() {
@@ -85,9 +82,25 @@
 		var x = -((r) * Math.sin(phi)*Math.cos(theta))
 		var y = ((r) * Math.cos(phi))
 		var z = ((r) * Math.sin(phi)*Math.sin(theta))
-		var geometry = new THREE.BoxGeometry(.05, .05, 1);
+		var geometry = new THREE.BoxGeometry(.03, .03, 2);
 		var material = new THREE.MeshBasicMaterial({color: 0xffff00});
 		var cube = new THREE.Mesh( geometry, material );
+		cube.position.set(x, y, z);
+		cube.lookAt(new THREE.Vector3(0, 0, 0));
+		scene.add(cube);
+		
+		r = 10;
+		lat = 28.57
+		lon = -80.65
+		phi   = (90-lat)*(Math.PI/180)
+		theta = (lon+180)*(Math.PI/180)
+
+		x = -((r) * Math.sin(phi)*Math.cos(theta))
+		y = ((r) * Math.cos(phi))
+		z = ((r) * Math.sin(phi)*Math.sin(theta))
+		geometry = new THREE.BoxGeometry(.03, .03, 2);
+		material = new THREE.MeshBasicMaterial({color: 0xffff00});
+		cube = new THREE.Mesh( geometry, material );
 		cube.position.set(x, y, z);
 		cube.lookAt(new THREE.Vector3(0, 0, 0));
 		scene.add(cube);
@@ -123,6 +136,8 @@
 	
 	// creates the path of the satellite based on the information in the csv
 	function satPath() {
+		var OL = 1440;
+		var NS = 7 * OL;
 		var material = new THREE.LineBasicMaterial({color: 0x0000ff});
 		//https://stackoverflow.com/questions/26790345/vertex-colors-in-three-line
 		// tween.js			https://gist.github.com/vincent/4ce2f9f37b1ac846f84c
@@ -131,7 +146,7 @@
 		var prev = 0, current;
 		var r, lat, lon, x, y, z;
 		var satName = newSats[0].name
-		for (var i = 0; i < newSats.length; i++) {
+		for (var i = 0; i < NS; i++) {
 			if (newSats[i].name != satName) {
 				satName = newSats[i].name
 				var line = new THREE.Line( geometry, material );
@@ -245,8 +260,15 @@
         //createStats();
 		satPath();
 		groundSite();
-		test();
+		splash();
         //createDistanceLine();
+    }
+	
+	function splash() {
+        d3.select(".btn")
+            .on("click", function () {
+            d3.select(".splash").remove();
+        });
     }
 
     function checkForRaycasts() {

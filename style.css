@@ -4,7 +4,7 @@
 }
 
 body {
-	background-color: #F1F1D4;
+	background-color: #000;
 }
 
 
@@ -23,15 +23,15 @@ canvas {
 }
 
 .splash {
-	padding: 3em;
+	padding: 1em;
 	position:absolute;
 	background-color:#fff;
 	color:#222;
-	left:25vw;
-	top: 10vh;
-	width:50vw;
-	height: 80vh;
-	z-index:200;
+	left:35vw;
+	top: 20vh;
+	width:30vw;
+	height: 45vh;
+	z-index:400;
 	transition: all 0.3s;
 }
 
@@ -60,7 +60,6 @@ canvas {
 	transition: 0.1s all ease;
 
 }
-
 
 .reset {
 	float: left;
