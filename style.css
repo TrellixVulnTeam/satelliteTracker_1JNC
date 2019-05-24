@@ -1,6 +1,7 @@
 * {
 	font-family: Arial;
 	box-sizing:border-box;
+	overflow-x: hidden;
 }
 
 body {
@@ -12,10 +13,6 @@ canvas {
 	position:absolute;
 }
 
-.graphs {
-	position:absolute;
-}
-
 .noClick {
 	pointer-events: none;
 	cursor: not-allowed;
@@ -23,15 +20,15 @@ canvas {
 }
 
 .splash {
-	padding: 1em;
+	padding: 3em;
 	position:absolute;
 	background-color:#fff;
 	color:#222;
-	left:35vw;
-	top: 20vh;
-	width:30vw;
-	height: 45vh;
-	z-index:400;
+	left:25vw;
+	top: 10vh;
+	width:50vw;
+	height: 80vh;
+	z-index:200;
 	transition: all 0.3s;
 }
 
@@ -44,9 +41,9 @@ canvas {
 	margin-right:auto;
 	display:block;
 	text-align:center;
-	width:8em;
+	width:6em;
 	color: #ddd;
-	margin-top: 2em;
+
 	padding:1em 0 1em 0;
 	font-size:200%;
 	cursor:pointer;
@@ -58,22 +55,9 @@ canvas {
 	background-color: #eee;
 	color:#222;
 	transition: 0.1s all ease;
-
 }
 
-.reset {
-	float: left;
-	padding: 3px;
-	margin: 1px;
-	background-color: black;
-	color:white;
-	cursor: pointer;
-	opacity: 0.1;
-}
 
-.legend > text {
-	color:#333;
-}
 path:hover {
 	fill-opacity: 1;
 }
@@ -84,24 +68,10 @@ path:hover {
 	bottom:40px;
 }
 
-.graphs {
-	box-sizing: border-box;
-}
-
 h1 {
 	text-align:center;
 	font-size: 1em;
 	color:#333;
 	padding-top:16px;
 	margin:0;
-}
-	
-
-#gradient {
-	z-index:1;
-	 pointer-events:none;
-}
-
-#scene {
-	z-index:0;
 }
