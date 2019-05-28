@@ -2,17 +2,17 @@
     //ensure strict mode
     'use strict';
     var canvas;
-	var vertexColors= THREE.VertexColors
     var scene, camera, renderer, controls, manager; // , stats;
     var windowW = window.innerWidth;
-    var sceneW = window.innerWidth / .77; //      size of the whole screen, adding /.8; after innerWidth moves the globe to the right
+    var sceneW = window.innerWidth / .8; //      size of the whole screen, adding /.8; after innerWidth moves the globe to the right
     var windowH = window.innerHeight;
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.05;
     var mouse = new THREE.Vector2();
     var parseDate = d3.time.format("%m/%d/%Y").parse;
     var sats = [];
-	var newSats = []; //the array holding all the satellite data after parsing csv
+	var satDict = {};
+	var rawSatData = []; //the array holding all the satellite data after parsing csv
     function onMouseMove(event) {
         // calculate mouse position in normalized device coordinates
         // (-1 to +1) for both components
@@ -23,12 +23,9 @@
 	window.addEventListener( 'resize', onWindowResize, false );
 
 	function onWindowResize(){
-
-		camera.aspect = window.innerWidth / .77 / window.innerHeight;
+		camera.aspect = window.innerWidth/.77/window.innerHeight;
 		camera.updateProjectionMatrix();
-
-		renderer.setSize( window.innerWidth / .77, window.innerHeight );
-
+		renderer.setSize(window.innerWidth/.77,window.innerHeight);
 	}
 	
     // Three.js setup procedure
@@ -55,6 +52,7 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.3;
         controls.enablePan = false;
+		controls.minDistance = 20.5;
     }
 	
     //Create sphere geometry and put the earth outline image onto it
@@ -112,7 +110,7 @@
 		z = ((r) * Math.sin(phi)*Math.sin(theta));
 		geometry = new THREE.BoxGeometry(.03, .03, 2);
 		material = new THREE.MeshBasicMaterial({color: 0xffff00});
-		cube = new THREE.Mesh( geometry, material );
+		cube = new THREE.Mesh(geometry, material);
 		cube.position.set(x, y, z);
 		cube.lookAt(new THREE.Vector3(0, 0, 0));
 		scene.add(cube);
@@ -151,47 +149,48 @@
 		//list of orbital points
 		var OL = 1440;
 		//number of spacecraft to be shown
-		var numCraft = 47;
+		var numCraft = 82;
 		//number of the satellite, starts at 0, used to end an orbit's path and start a new one
 		var iter = 0;
 		//total length of the list of orbital points for the satellites
 		var NS = numCraft * OL;
 		var material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
-		//https://stackoverflow.com/questions/26790345/vertex-colors-in-three-line
 		// tween.js			https://gist.github.com/vincent/4ce2f9f37b1ac846f84c
 		var geometry = new THREE.Geometry();
 		// prev and current are used to determine whether the previous and current orbital points are above the horizon.
 		var prev = 0, current;
 		var r, lat, lon, x, y, z;
-		var satName = newSats[0].name;
+		var satName = rawSatData[0].name;
 		var pathColor = 0x0000ff;
 		for (var i = 0; i < NS; i++) {
 			//if the satellite changes, add the previous satellite's path to the scene and start a new path
-			if (newSats[i].name != satName) {
-				satName = newSats[i].name
+			if (rawSatData[i].name != satName) {
 				iter += 1;
 				var line = new THREE.Line( geometry, material );
+				line.name = satName;
 				scene.add(line);
+				satDict[satName] = line;
+				satName = rawSatData[i].name;
 				geometry = new THREE.Geometry();
 				material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
 			}
-			current = newSats[i].horizon;
+			current = rawSatData[i].horizon;
 			//currently the orbital points are obtained once per minute but the time data isn't always exactly a minute
 			//apart. The following can be used to fix the minutes and seconds so they are each exactly a minute apart.
-			/*if (newSats[i].second > 30) {
-				newSats[i].second = 0;
-				newSats[i].minute += 1;
+			/*if (rawSatData[i].second > 30) {
+				rawSatData[i].second = 0;
+				rawSatData[i].minute += 1;
 			}
 			else {
-				newSats[i].second = 0;
+				rawSatData[i].second = 0;
 			}*/
 			
 			//r = radius of the orbital point
-			r = ((newSats[i].elevation+6378)*10/6378);
+			r = ((rawSatData[i].elevation+6378)*10/6378);
 			//lat = satellite latitude
-			lat = newSats[i].latitude;
+			lat = rawSatData[i].latitude;
 			//lon = satellite longitute
-			lon = newSats[i].longitude;
+			lon = rawSatData[i].longitude;
 			//phi and theta are used to change the keplarian orbital points to an x,y,z format that the globe can use.
 			var phi = (90-lat)*(Math.PI/180);
 			var theta = (lon+180)*(Math.PI/180);
@@ -224,6 +223,8 @@
 			prev = current;
 		}
 		var line = new THREE.Line(geometry, material);
+		line.name = satName;
+		satDict[satName] = line;
 		//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
 		scene.add(line);	
 	}
@@ -249,12 +250,12 @@
         setupScene();
         setupControls();
         createEarth();
-        //createSatellites();
-        //createStats();
 		satPath();
 		groundSite();
 		splash();
-        //createDistanceLine();
+        //createSatellites();
+        //createStats();
+		//createDistanceLine();
     }
 	
 	function splash() {
@@ -308,7 +309,7 @@
             horizon: d.horizon
         };
     }, function (data) {
-        newSats = data.slice(); //copy 
+        rawSatData = data.slice(); //copy 
 		init();
     });
 	
