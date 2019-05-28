@@ -35,16 +35,15 @@
     function setupScene() {
         scene = new THREE.Scene();
         canvas = document.getElementById("scene");
-        renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+        renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
         renderer.setSize(sceneW, windowH);
         renderer.setClearColor(0x000000, 1);
         camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 10000);
         camera.position.z = 22;
+		camera.position.y = 13;
         renderer.shadowMap.enabled = false;
         manager = new THREE.LoadingManager();
-        manager.onLoad = function () {
-            render();
-        };
+        manager.onLoad = function () {render();};
     }
 	
     //Three.OrbitControls setup procedure
@@ -85,18 +84,18 @@
 	// creates a ground site (right now there are 2) at a specified latitude and longitude
 	function groundSite() {
 		var r = (1.403+6378)*10/6378;
-		var lat = 41.76
-		var lon = -111.82
-		var phi   = (90-lat)*(Math.PI/180)
-		var theta = (lon+180)*(Math.PI/180)
+		var lat = 41.76;
+		var lon = -111.82;
+		var phi   = (90-lat)*(Math.PI/180);
+		var theta = (lon+180)*(Math.PI/180);
 
-		var x = -((r) * Math.sin(phi)*Math.cos(theta))
-		var y = ((r) * Math.cos(phi))
-		var z = ((r) * Math.sin(phi)*Math.sin(theta))
+		var x = -((r) * Math.sin(phi)*Math.cos(theta));
+		var y = ((r) * Math.cos(phi));
+		var z = ((r) * Math.sin(phi)*Math.sin(theta));
 		//creates an elongated yellow cube to show the location of the groundsite
 		var geometry = new THREE.BoxGeometry(.03, .03, 2);
 		var material = new THREE.MeshBasicMaterial({color: 0xffff00});
-		var cube = new THREE.Mesh( geometry, material );
+		var cube = new THREE.Mesh(geometry, material);
 		cube.position.set(x, y, z);
 		//rotates the cube to radiate out from the center of the globe
 		cube.lookAt(new THREE.Vector3(0, 0, 0));
@@ -105,7 +104,7 @@
 		r = 10;
 		lat = 28.57;
 		lon = -80.65;
-		phi   = (90-lat)*(Math.PI/180);
+		phi = (90-lat)*(Math.PI/180);
 		theta = (lon+180)*(Math.PI/180);
 
 		x = -((r) * Math.sin(phi)*Math.cos(theta));
@@ -152,7 +151,7 @@
 		//list of orbital points
 		var OL = 1440;
 		//number of spacecraft to be shown
-		var numCraft = 5;
+		var numCraft = 47;
 		//number of the satellite, starts at 0, used to end an orbit's path and start a new one
 		var iter = 0;
 		//total length of the list of orbital points for the satellites
@@ -188,18 +187,18 @@
 			}*/
 			
 			//r = radius of the orbital point
-			r = ((newSats[i].elevation+6378)*10/6378)
+			r = ((newSats[i].elevation+6378)*10/6378);
 			//lat = satellite latitude
-			lat = newSats[i].latitude
+			lat = newSats[i].latitude;
 			//lon = satellite longitute
-			lon = newSats[i].longitude
+			lon = newSats[i].longitude;
 			//phi and theta are used to change the keplarian orbital points to an x,y,z format that the globe can use.
-			var phi = (90-lat)*(Math.PI/180)
-			var theta = (lon+180)*(Math.PI/180)
+			var phi = (90-lat)*(Math.PI/180);
+			var theta = (lon+180)*(Math.PI/180);
 
-			x = -((r) * Math.sin(phi)*Math.cos(theta))
-			z = ((r) * Math.sin(phi)*Math.sin(theta))
-			y = ((r) * Math.cos(phi))
+			x = -((r) * Math.sin(phi)*Math.cos(theta));
+			z = ((r) * Math.sin(phi)*Math.sin(theta));
+			y = ((r) * Math.cos(phi));
 			// if the satellite path becomes visible to the groundsite's position, change the path color to red
 			if (current == 1 && prev == 0) {
 				pathColor = 0xff0000;
@@ -274,9 +273,7 @@
         var intersects = raycaster.intersectObjects(scene.children);
         //only first intersect
         if (intersects.length != 0) {
-            if (print)
-                //console.log(intersects);
-            print = false;
+            if (print) print = false;
             if (intersects[0].object.type == "Line") {
                 // intersects[0].object.material.color.set( 0xffff00 );
                 intersects[0].object.material.opacity = 1.0;
