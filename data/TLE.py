@@ -29,6 +29,7 @@ IDs = [4, 8, 9, 11, 12, 18, 19, 20, 22, 24, 25, 26, 29, 30, 31, 32, 33, 34, 46, 
 43021, 43231, 43466, 43467, 43468, 43546, 43547, 43548, 43549, 43550, 43551, 43552, 43553, 43554, 43556, 43557, 43558,
 43559, 43560, 43561, 43565, 43595, 43596, 43597, 43598, 43638, 43639, 43640, 43702, 43756, 43870, 44029, 44030, 44031,
 44032, 44033, 44069, 44110, 44188, 44222]
+print(len(IDs))
 timeNow = datetime.now()
 fl = 'time.txt'
 with open(fl, 'r') as file:
@@ -99,7 +100,7 @@ ts = load.timescale()
 ground = Topos('41.72 N', '-111.82 E', None, None, 1403)
 ground2 = Topos('28.57 N', '-80.65 E')
 # creates a list of every minute for the next 24 hours
-minutes = range(60 * 24)
+minutes = range(60*24)
 # creates a list of times for each minute of the above minutes list
 t = ts.utc(d.year, d.month, d.day, d.hour + (d.minute / 60), minutes)
 mountain = timezone('US/Mountain')

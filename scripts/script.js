@@ -149,7 +149,7 @@
 		//list of orbital points
 		var OL = 1440;
 		//number of spacecraft to be shown
-		var numCraft = 82;
+		var numCraft = 100;
 		//number of the satellite, starts at 0, used to end an orbit's path and start a new one
 		var iter = 0;
 		//total length of the list of orbital points for the satellites
