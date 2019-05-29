@@ -9,143 +9,55 @@
       canvas { width: 100%; height: 100% }
     </style>
 	<script>
-		<!--
-		function timedRefresh(timeoutPeriod) {
-			setTimeout("location.reload(true);",timeoutPeriod);
-		}
-		//refresh the window every 30 minutes
-		window.onload = timedRefresh(1800000);
-		//   -->
-	</script>
-	<script>
-		function checkClick(name) {
-		var isChecked = document.getElementById(name).checked;
-		if (isChecked) {
-			console.log(name);
-		}
-		}
+		
 	</script>
     <link rel="stylesheet" type="text/css" href="style.css">
   </head>
-  <body>
+  <body onload="openSideBar()">
     <canvas id="scene"></canvas>
-	<div class="splash">
-      <h1>Satellite Tracker</h1>
-	  <p></p>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore 
-	  magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo 
-	  consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
-	  Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-      <div class="btn">Dismiss</div>
-	
-    </div>
+	<script src="scripts/buttonControls.js"></script>
     <script src="scripts/three.js"></script>
     <script src="scripts/stats.min.js"></script>
     <script src="scripts/d3.js"></script>
     <script src="scripts/OrbitControls.js"></script>
     <script src="scripts/script.js" type="text/javascript" charset="utf-8" async defer></script>
-	<div class="sidenav">
-		<script type="text/javascript" src="scripts/script.js"></script>
-		<p>Spacecraft</p>
-		<label>EXPLORER 1<input type="checkbox" id="EXPLORER 1" onclick="checkClick(this.id)"></label>
-		<label>SPUTNIK 3<input type="checkbox" id="SPUTNIK 3" onclick="checkClick(this.id)"></label>
-		<label>EXPLORER 4<input type="checkbox" id="EXPLORER 4" onclick="checkClick(this.id)"></label>		
-		<label>VANGUARD 2<input type="checkbox" id="VANGUARD 2" onclick="checkClick(this.id)"></label>
-		<label>VANGUARD R/B<input type="checkbox" id="VANGUARD R/B" onclick="checkClick(this.id)"></label>
-		<label>DISCOVERER 5<input type="checkbox" id="DISCOVERER 5" onclick="checkClick(this.id)"></label>
-		<label>VANGUARD 3<input type="checkbox" id="VANGUARD 3" onclick="checkClick(this.id)"></label>
-		<label>EXPLORER 7<input type="checkbox" id="EXPLORER 7" onclick="checkClick(this.id)"></label>
-		<label>DISCOVERER 7<input type="checkbox" id="DISCOVERER 7" onclick="checkClick(this.id)"></label>
-		<label>DISCOVERER 8<input type="checkbox" id="DISCOVERER 8" onclick="checkClick(this.id)"></label>
-		<label>DISCOVERER 5 CAPSULE<input type="checkbox" id="DISCOVERER 5 CAPSULE" onclick="checkClick(this.id)"></label>
-		<label>TIROS 1<input type="checkbox" id="TIROS 1" onclick="checkClick(this.id)"></label>		
-		<label>THOR ABLESTAR R/B<input type="checkbox" id="THOR ABLESTAR R/B" onclick="checkClick(this.id)"></label>
-		<label>TRANSIT 1B<input type="checkbox" id="TRANSIT 1B" onclick="checkClick(this.id)"></label>
-		<label>DISCOVERER 11<input type="checkbox" id="DISCOVERER 11" onclick="checkClick(this.id)"></label>
-		<label>THOR ABLESTAR DEB<input type="checkbox" id="THOR ABLESTAR DEB" onclick="checkClick(this.id)"></label>
-		<label>SPUTNIK 4<input type="checkbox" id="SPUTNIK 4" onclick="checkClick(this.id)"></label>
-		<label>SOLRAD 1 (GREB)<input type="checkbox" id="SOLRAD 1 (GREB)" onclick="checkClick(this.id)"></label>
-		<label>DISCOVERER 13<input type="checkbox" id="DISCOVERER 13" onclick="checkClick(this.id)"></label>
-		<label>ECHO 1<input type="checkbox" id="ECHO 1" nonclick="checkClick(this.id)"></label>
-		<label>DISCOVERER 14<input type="checkbox" id="DISCOVERER 14" onclick="checkClick(this.id)"></label>
-		<label>VOSTOK 2<input type="checkbox" id="VOSTOK 2" onclick="checkClick(this.id)"></label>
-		<label>EXOS D (AKEBONO)<input type="checkbox" id="EXOS D (AKEBONO)" onclick="checkClick(this.id)"></label>
-		<label>Hubble Space Telescope<input type="checkbox" id="HST" onclick="checkClick(this.id)"></label>
-		<label>GEOTAIL<input type="checkbox" id="GEOTAIL" onclick="checkClick(this.id)"></label>
-		<label>SIRIUS 3<input type="checkbox" id="SIRIUS 3" onclick="checkClick(this.id)"></label>
-		<label>ISS (ZARYA)<input type="checkbox" id="ISS (ZARYA)" onclick="checkClick(this.id)"></label>
-		<label>XMM<input type="checkbox" id="XMM" onclick="checkClick(this.id)"></label>
-		<label>TERRA<input type="checkbox" id="TERRA" onclick="checkClick(this.id)"></label>
-		<label>AQUA<input type="checkbox" id="AQUA" onclick="checkClick(this.id)"></label>
-		<label>INTEGRAL<input type="checkbox" id="INTEGRAL" onclick="checkClick(this.id)"></label>
-		<label>SAUDISAT 1C<input type="checkbox" id="SAUDISAT 1C" onclick="checkClick(this.id)"></label>
-		<label>THEMIS A<input type="checkbox" id="THEMIS A" onclick="checkClick(this.id)"></label>
-		<label>THEMIS D<input type="checkbox" id="THEMIS D" onclick="checkClick(this.id)"></label>
-		<label>AGILE<input type="checkbox" id="AGILE" onclick="checkClick(this.id)"></label>
-		<label>IBEX<input type="checkbox" id="IBEX" onclick="checkClick(this.id)"></label>
-		<label>NOAA 19<input type="checkbox" id="NOAA 19" onclick="checkClick(this.id)"></label>
-		<label>EXPRESS AM-44<input type="checkbox" id="EXPRESS AM-44" onclick="checkClick(this.id)"></label>
-		<label>PRISMA (TANGO)<input type="checkbox" id="PRISMA (TANGO)" onclick="checkClick(this.id)"></label>
-		<label>SPEKTR R<input type="checkbox" id="SPEKTR R" onclick="checkClick(this.id)"></label>
-		<label>TACSAT 4<input type="checkbox" id="TACSAT 4" onclick="checkClick(this.id)"></label>
-		<label>VIASAT 1<input type="checkbox" id="VIASAT 1" onclick="checkClick(this.id)"></label>
-		<label>GLOBALSTAR M096<input type="checkbox" id="GLOBALSTAR M096" onclick="checkClick(this.id)"></label>
-		<label>LANDSAT 8<input type="checkbox" id="LANDSAT 8" onclick="checkClick(this.id)"></label>
-		<label>FUNCUBE 1<input type="checkbox" id="FUNCUBE 1" onclick="checkClick(this.id)"></label>
-		<label>METEOR M2<input type="checkbox" id="METEOR M2" onclick="checkClick(this.id)"></label>
-		<label>MMS 1<input type="checkbox" id="MMS 1" onclick="checkClick(this.id)"></label>
-		<label>NAVSTAR 75 (USA 265)<input type="checkbox" id="NAVSTAR 75 (USA 265)" onclick="checkClick(this.id)"></label>
-		<label>KMS 4<input type="checkbox" id="KMS 4" onclick="checkClick(this.id)"></label>
-		<label>TIANGONG-2<input type="checkbox" id="TIANGONG-2" onclick="checkClick(this.id)"></label>
-		<label>BANXING-2<input type="checkbox" id="BANXING-2" onclick="checkClick(this.id)"></label>
-		<label>SES 15<input type="checkbox" id="SES 15" onclick="checkClick(this.id)"></label>
-		<label>ALTAIR PATHFINDER<input type="checkbox" id="ALTAIR PATHFINDER" onclick="checkClick(this.id)"></label>
-		<label>ZA-AEROSAT<input type="checkbox" id="ZA-AEROSAT" onclick="checkClick(this.id)"></label>
-		<label>NJUST-1<input type="checkbox" id="NJUST-1" onclick="checkClick(this.id)"></label>
-		<label>NSIGHT-1<input type="checkbox" id="NSIGHT-1" onclick="checkClick(this.id)"></label>
-		<label>VIASAT 2<input type="checkbox" id="VIASAT 2" onclick="checkClick(this.id)"></label>
-		<label>KESTREL EYE 2M<input type="checkbox" id="KESTREL EYE 2M" onclick="checkClick(this.id)"></label>
-		<label>ASTERIA<input type="checkbox" id="ASTERIA" onclick="checkClick(this.id)"></label>
-		<label>DELLINGR (RBLE)<input type="checkbox" id="DELLINGR (RBLE)" onclick="checkClick(this.id)"></label>
-		<label>O3B FM15<input type="checkbox" id="O3B FM15" onclick="checkClick(this.id)"></label>
-		<label>UBAKUSAT<input type="checkbox" id="UBAKUSAT" onclick="checkClick(this.id)"></label>
-		<label>1KUNS-PF<input type="checkbox" id="1KUNS-PF" onclick="checkClick(this.id)"></label>
-		<label>IRAZU<input type="checkbox" id="IRAZU" onclick="checkClick(this.id)"></label>
-		<label>CUBERRT<input type="checkbox" id="CUBERRT" onclick="checkClick(this.id)"></label>
-		<label>TEMPEST-D<input type="checkbox" id="TEMPEST-D" onclick="checkClick(this.id)"></label>
-		<label>RAINCUBE<input type="checkbox" id="RAINCUBE" onclick="checkClick(this.id)"></label>
-		<label>HALOSAT<input type="checkbox" id="HALOSAT" onclick="checkClick(this.id)"></label>
-		<label>RADIX<input type="checkbox" id="RADIX" onclick="checkClick(this.id)"></label>
-		<label>OBJECT NZ<input type="checkbox" id="OBJECT NZ" onclick="checkClick(this.id)"></label>
-		<label>EQUISAT<input type="checkbox" id="EQUISAT" onclick="checkClick(this.id)"></label>
-		<label>OBJECT PB<input type="checkbox" id="OBJECT PB" onclick="checkClick(this.id)"></label>
-		<label>OBJECT PC<input type="checkbox" id="OBJECT PC" onclick="checkClick(this.id)"></label>
-		<label>AEROCUBE 12A<input type="checkbox" id="AEROCUBE 12A" onclick="checkClick(this.id)"></label>
-		<label>AEROCUBE 12B<input type="checkbox" id="AEROCUBE 12B" onclick="checkClick(this.id)"></label>
-		<label>LEMUR 2 VU<input type="checkbox" id="LEMUR 2 VU" onclick="checkClick(this.id)"></label>
-		<label>LEMUR 2 ALEXANDER<input type="checkbox" id="LEMUR 2 ALEXANDER" onclick="checkClick(this.id)"></label>
-		<label>LEMUR 2 YUASA<input type="checkbox" id="LEMUR 2 YUASA" onclick="checkClick(this.id)"></label>
-		<label>LEMUR 2 TOMHENDERSON<input type="checkbox" id="LEMUR 2 TOMHENDERSON" onclick="checkClick(this.id)"></label>
-		<label>GALILEO 26 (2C2)<input type="checkbox" id="GALILEO 26 (2C2)" onclick="checkClick(this.id)"></label>
-		<label>OBJECT PG<input type="checkbox" id="OBJECT PG" onclick="checkClick(this.id)"></label>
-		<label>OBJECT PH<input type="checkbox" id="OBJECT PH" onclick="checkClick(this.id)"></label>
-		<label>OBJECT PJ<input type="checkbox" id="OBJECT PJ" onclick="checkClick(this.id)"></label>
-		<label>OBJECT PK<input type="checkbox" id="OBJECT PK" onclick="checkClick(this.id)"></label>
-		<label>OBJECT PN<input type="checkbox" id="OBJECT PN" onclick="checkClick(this.id)"></label>
-		<label>OBJECT PP<input type="checkbox" id="OBJECT PP" onclick="checkClick(this.id)"></label>
-		<label>STARS-ME<input type="checkbox" id="STARS-ME" onclick="checkClick(this.id)"></label>
-		<label>PROGRESS MS-10<input type="checkbox" id="PROGRESS MS-10" onclick="checkClick(this.id)"></label>
-		<label>SOYUZ MS-11<input type="checkbox" id="SOYUZ MS-11" onclick="checkClick(this.id)"></label>
-		<label>ISS DEB (SEDA-AP)<input type="checkbox" id="ISS DEB (SEDA-AP)" onclick="checkClick(this.id)"></label>
-		<label>CATSAT-2<input type="checkbox" id="CATSAT-2" onclick="checkClick(this.id)"></label>
-		<label>DELPHINI<input type="checkbox" id="DELPHINI" onclick="checkClick(this.id)"></label>
-		<label>UNITE<input type="checkbox" id="UNITE" onclick="checkClick(this.id)"></label>
-		<label>TECHEDSAT 8<input type="checkbox" id="TECHEDSAT 8" onclick="checkClick(this.id)"></label>
-		<label>CATSAT-1<input type="checkbox" id="CATSAT-1" onclick="checkClick(this.id)"></label>
-		<label>SOYUZ MS-12<input type="checkbox" id="SOYUZ MS-12" onclick="checkClick(this.id)"></label>
-		<label>PROGRESS MS-11<input type="checkbox" id="PROGRESS MS-11" onclick="checkClick(this.id)"></label>
-		<label>CYGNUS NG-11<input type="checkbox" id="CYGNUS NG-11" onclick="checkClick(this.id)"></label>
-		<label>DRAGON CRS-17<input type="checkbox" id="DRAGON CRS-17" onclick="checkClick(this.id)"></label>
+	<div class="sidenav" id="gsTitle">
+		<p><h1>GroundSites</h1></p>
+	</div>
+	<div class="sidenav" id = "sitenav">
+	<label>Test 1<input type="checkbox" class id="test1" onclick="javascript:showGroundSites(this.id, this.checked)"></label>
+	<hr>
+	<label>Test 2<input type="checkbox" class id="test2" onclick="javascript:showGroundSites(this.id, this.checked)"></label>
+	</div>
+	<div class="sidenav" id = "spacecraftTitle">
+	<p><h1>Spacecraft</h1></p>
+		<label>All<input type="checkbox" class id="allCheck" onclick="javascript:checkAll(this.checked)"></label>
+		<br>
+	</div>
+	<div class="sidenav" id = "craftnav">
+		<div id = "listCraft"></div>
+		<script>
+			var spacecraft = ["1KUNS-PF", "AEROCUBE 12A", "AEROCUBE 12B", "AGILE", "ALTAIR PATHFINDER", "AQUA", 
+			"ASTERIA", "BANXING-2", "CATSAT-1", "CATSAT-2", "CUBERRT", "CYGNUS NG-11", "DELLINGR (RBLE)", "DELPHINI", 
+			"DISCOVERER 11", "DISCOVERER 13", "DISCOVERER 14", "DISCOVERER 5", "DISCOVERER 5 CAPSULE", "DISCOVERER 7", 
+			"DISCOVERER 8", "DRAGON CRS-17", "EQUISAT", "EXOS D (AKEBONO)", "EXPLORER 1", "EXPLORER 4", "EXPLORER 7", 
+			"EXPRESS AM-44", "FUNCUBE 1", "GALILEO 26 (2C2)", "GEOTAIL", "GLOBALSTAR M096", "HALOSAT", "HARBINGER", 
+			"HST", "IBEX", "INTEGRAL", "IRAZU", "IROS 1", "ISS (ZARYA)", "ISS DEB (SEDA-AP)", "KESTREL EYE 2M", 
+			"KMS 4", "LANDSAT 8", "LEMUR 2 ALEXANDER", "LEMUR 2 TOMHENDERSON", "LEMUR 2 VU", "LEMUR 2 YUASA", 
+			"METEOR M2", "MMS 1", "NAVSTAR 75 (USA 265)", "NJUST-1", "NOAA 19", "NSIGHT-1", "O3B FM15", "OBJECT NZ", 
+			"OBJECT PB", "OBJECT PC", "OBJECT PG", "OBJECT PH", "OBJECT PJ", "OBJECT PK", "OBJECT PN", "OBJECT PP", 
+			"PRISMA (TANGO)", "PROGRESS MS-10", "PROGRESS MS-11", "RADIX", "RAINCUBE", "SAUDISAT 1C", "SES 15", 
+			"SIRIUS 3", "SOLRAD 1 (GREB)", "SOYUZ MS-11", "SOYUZ MS-12", "SOYUZ MS-12", "SPEKTR R", "SPUTNIK 3", 
+			"SPUTNIK 4", "STARS-ME", "TACSAT 4", "TECHEDSAT 8", "TEMPEST-D", "TERRA", "THEMIS A", "THEMIS D", 
+			"THOR ABLESTAR DEB", "THOR ABLESTAR R/B", "TIANGONG-2", "TRANSIT 1B", "UBAKUSAT", "UNITE", "VANGUARD 2", 
+			"VANGUARD 3", "VANGUARD R/B", "VIASAT 1", "VIASAT 2", "VOSTOK 2", "XMM", "ZA-AEROSAT"];
+			var text = "";
+			var i;
+			for (i = 0; i < spacecraft.length; i++) {
+				text += "<label>" + spacecraft[i] + "<input type=" + "\"" + "checkbox" + "\"" + " id=" + "\"" + spacecraft[i] + "\"" + "onclick=" + "\"" + "javascript:checkClick(this.id,this.checked)" + "\"" + "></label><hr>"
+			}
+			document.getElementById("listCraft").innerHTML = text;
+		</script>
 	</div>
   </body>
 </html>

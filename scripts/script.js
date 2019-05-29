@@ -7,11 +7,11 @@
     var sceneW = window.innerWidth / .8; //      size of the whole screen, adding /.8; after innerWidth moves the globe to the right
     var windowH = window.innerHeight;
     var raycaster = new THREE.Raycaster();
-    raycaster.linePrecision = 0.05;
+    raycaster.linePrecision = 0.1;
     var mouse = new THREE.Vector2();
     var parseDate = d3.time.format("%m/%d/%Y").parse;
-    var sats = [];
-	var satDict = {};
+    window.groundSites = {};
+	window.satDict = {};
 	var rawSatData = []; //the array holding all the satellite data after parsing csv
     function onMouseMove(event) {
         // calculate mouse position in normalized device coordinates
@@ -21,12 +21,6 @@
     }
 	
 	window.addEventListener( 'resize', onWindowResize, false );
-
-	function onWindowResize(){
-		camera.aspect = window.innerWidth/.77/window.innerHeight;
-		camera.updateProjectionMatrix();
-		renderer.setSize(window.innerWidth/.77,window.innerHeight);
-	}
 	
     // Three.js setup procedure
     function setupScene() {
@@ -42,6 +36,12 @@
         manager = new THREE.LoadingManager();
         manager.onLoad = function () {render();};
     }
+	
+	function onWindowResize(){
+		camera.aspect = window.innerWidth/.77/window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(window.innerWidth/.77,window.innerHeight);
+	}
 	
     //Three.OrbitControls setup procedure
     function setupControls() {
@@ -97,6 +97,9 @@
 		cube.position.set(x, y, z);
 		//rotates the cube to radiate out from the center of the globe
 		cube.lookAt(new THREE.Vector3(0, 0, 0));
+		cube.name = "test1";
+		groundSites[cube.name] = cube;
+		cube.visible = false;
 		scene.add(cube);
 		
 		r = 10;
@@ -113,36 +116,11 @@
 		cube = new THREE.Mesh(geometry, material);
 		cube.position.set(x, y, z);
 		cube.lookAt(new THREE.Vector3(0, 0, 0));
+		cube.name = "test2";
+		groundSites[cube.name] = cube;
+		cube.visible = false;
 		scene.add(cube);
 	}
-	
-    // Populate the sats array, calculate orbital elements, put into scene (not currently being used)
-    /*function createSatellites() {
-        var color = d3.scale.category20c();
-        for (var i = 0; i < sats.length; i++) {
-            sats[i].xRad = sats[i].sma;
-            sats[i].yRad = sats[i].sma * Math.sqrt(1 - (sats[i].ecc * sats[i].ecc));
-            sats[i].mat = new THREE.LineBasicMaterial({ color: color(sats[i].Purpose), opacity: 0.5, transparent: true });
-            sats[i].curve = new THREE.EllipseCurve(0, 0, 10 / 6378000 * sats[i].xRad, 10 / 6378000 * sats[i].yRad, 0, 2 * Math.PI, false, (sats[i].raan * Math.PI) / 180);
-            sats[i].path = new THREE.Path(sats[i].curve.getPoints(200));
-            sats[i].path.autoClose = true;
-            sats[i].geo = sats[i].path.createPointsGeometry(50);
-            sats[i].geo.rotateX((sats[i].incl * Math.PI) / 180);
-            sats[i].geo.rotateZ((sats[i].raan * Math.PI) / 180);
-            sats[i].geo.rotateX(Math.PI / 2);
-            sats[i].geo.rotateX((-23.4 * Math.PI) / 180);
-            sats[i].mesh = new THREE.Line(sats[i].geo, sats[i].mat);
-            scene.add(sats[i].mesh);
-            //console.log(sats);
-        }
-    }*/
-	
-    // Show FPS stats in the corner
-    /*function createStats() {
-        stats = new Stats();
-        stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
-        document.body.appendChild(stats.dom);
-    }*/
 	
 	// creates the path of the satellite based on the information in the csv
 	function satPath() {
@@ -169,6 +147,7 @@
 				var line = new THREE.Line( geometry, material );
 				line.name = satName;
 				scene.add(line);
+				line.visible = false;
 				satDict[satName] = line;
 				satName = rawSatData[i].name;
 				geometry = new THREE.Geometry();
@@ -224,6 +203,7 @@
 		}
 		var line = new THREE.Line(geometry, material);
 		line.name = satName;
+		line.visible = false;
 		satDict[satName] = line;
 		//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
 		scene.add(line);	
@@ -253,9 +233,6 @@
 		satPath();
 		groundSite();
 		splash();
-        //createSatellites();
-        //createStats();
-		//createDistanceLine();
     }
 	
 	function splash() {
@@ -285,15 +262,14 @@
     function render() {
         requestAnimationFrame(render);
         controls.update();
-        //stats.begin();
         if (mouse.x < sceneW) {
             checkForRaycasts();
         }
         renderer.render(scene, camera);
-        //stats.end();
     }
 	
 	// pulls the satellite data from the .csv and populates a list with it
+	//https://d3-wiki.readthedocs.io/zh_CN/master/CSV/
 	d3.csv('data/position.csv', function (d) {
         return {
 			name: d.name,
@@ -312,31 +288,5 @@
         rawSatData = data.slice(); //copy 
 		init();
     });
-	
-	//https://d3-wiki.readthedocs.io/zh_CN/master/CSV/
-   /* d3.csv('satellites.csv', function (d) {
-        return {
-            norad: d.norad,
-            name: d.name,
-            date: parseDate(d.launch_date),
-            sma: +d.sma,
-            ecc: +d.ecc,
-            incl: +d.incl,
-            raan: +d.raan,
-            Country: d.country,
-            owner: d.owner,
-            Users: d.users,
-            Purpose: d.purpose,
-            apogee: +d.apogee,
-            perigee: +d.perigee,
-            mass: +d.mass,
-            contractor: d.contractor,
-            contractor_country: d.contractor_country,
-            launch_site: d.launch_site,
-            launch_vehicle: d.launch_vehicle
-        };
-    }, function (data) {
-        sats = data.slice(); //copy 
-        init();
-    });*/
+
 })(window, document);
