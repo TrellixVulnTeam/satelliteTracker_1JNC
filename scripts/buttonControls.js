@@ -1,5 +1,8 @@
 function checkClick(name, check) {
 	sat = satDict[name];
+	var checkboxes = document.getElementsByTagName('input');
+	var testOne = document.getElementById('test1');
+	var testTwo = document.getElementById('test2');
 	if (check) {
 		sat.visible = true;
 	}

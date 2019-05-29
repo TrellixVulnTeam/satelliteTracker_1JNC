@@ -8,10 +8,14 @@
       body {margin: 0;}
       canvas { width: 100%; height: 100% }
     </style>
-	<script>
-		
-	</script>
     <link rel="stylesheet" type="text/css" href="style.css">
+	<script src="//ajax/googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script type="text/javascript">
+	//https://codepen.io/anon/pen/gJBPxE?&page=1
+		$(window).load(function() {
+		$(".loader").fadeOut("slow");
+		})
+	</script>
   </head>
   <body onload="openSideBar()">
     <canvas id="scene"></canvas>
@@ -21,6 +25,7 @@
     <script src="scripts/d3.js"></script>
     <script src="scripts/OrbitControls.js"></script>
     <script src="scripts/script.js" type="text/javascript" charset="utf-8" async defer></script>
+
 	<div class="sidenav" id="gsTitle">
 		<p><h1>GroundSites</h1></p>
 	</div>
@@ -39,25 +44,32 @@
 		<script>
 			var spacecraft = ["1KUNS-PF", "AEROCUBE 12A", "AEROCUBE 12B", "AGILE", "ALTAIR PATHFINDER", "AQUA", 
 			"ASTERIA", "BANXING-2", "CATSAT-1", "CATSAT-2", "CUBERRT", "CYGNUS NG-11", "DELLINGR (RBLE)", "DELPHINI", 
-			"DISCOVERER 11", "DISCOVERER 13", "DISCOVERER 14", "DISCOVERER 5", "DISCOVERER 5 CAPSULE", "DISCOVERER 7", 
-			"DISCOVERER 8", "DRAGON CRS-17", "EQUISAT", "EXOS D (AKEBONO)", "EXPLORER 1", "EXPLORER 4", "EXPLORER 7", 
+			"DISCOVERER 11", "DISCOVERER 13", "DISCOVERER 5", "DISCOVERER 5 CAPSULE", "DISCOVERER 6", "DISCOVERER 7", 
+			"DISCOVERER 8", "DRAGON CRS-17", "ECHO 1", "EQUISAT", "EXOS D (AKEBONO)", "EXPLORER 1", "EXPLORER 4", "EXPLORER 7", 
 			"EXPRESS AM-44", "FUNCUBE 1", "GALILEO 26 (2C2)", "GEOTAIL", "GLOBALSTAR M096", "HALOSAT", "HARBINGER", 
-			"HST", "IBEX", "INTEGRAL", "IRAZU", "IROS 1", "ISS (ZARYA)", "ISS DEB (SEDA-AP)", "KESTREL EYE 2M", 
-			"KMS 4", "LANDSAT 8", "LEMUR 2 ALEXANDER", "LEMUR 2 TOMHENDERSON", "LEMUR 2 VU", "LEMUR 2 YUASA", 
-			"METEOR M2", "MMS 1", "NAVSTAR 75 (USA 265)", "NJUST-1", "NOAA 19", "NSIGHT-1", "O3B FM15", "OBJECT NZ", 
-			"OBJECT PB", "OBJECT PC", "OBJECT PG", "OBJECT PH", "OBJECT PJ", "OBJECT PK", "OBJECT PN", "OBJECT PP", 
-			"PRISMA (TANGO)", "PROGRESS MS-10", "PROGRESS MS-11", "RADIX", "RAINCUBE", "SAUDISAT 1C", "SES 15", 
-			"SIRIUS 3", "SOLRAD 1 (GREB)", "SOYUZ MS-11", "SOYUZ MS-12", "SOYUZ MS-12", "SPEKTR R", "SPUTNIK 3", 
-			"SPUTNIK 4", "STARS-ME", "TACSAT 4", "TECHEDSAT 8", "TEMPEST-D", "TERRA", "THEMIS A", "THEMIS D", 
-			"THOR ABLESTAR DEB", "THOR ABLESTAR R/B", "TIANGONG-2", "TRANSIT 1B", "UBAKUSAT", "UNITE", "VANGUARD 2", 
+			"HST", "IBEX", "INTEGRAL", "IRAZU", "ISS (ZARYA)", "ISS DEB (SEDA-AP)", "KESTREL EYE 2M", "KMS 4", 
+			"LANDSAT 8", "LEMUR 2 ALEXANDER", "LEMUR 2 TOMHENDERSON", "LEMUR 2 VU", "LEMUR 2 YUASA", "METEOR M2", 
+			"MMS 1", "NAVSTAR 75 (USA 265)", "NJUST-1", "NOAA 19", "NSIGHT-1", "O3B FM15", "OBJECT NZ", "OBJECT PB", 
+			"OBJECT PC", "OBJECT PG", "OBJECT PH", "OBJECT PJ", "OBJECT PK", "OBJECT PN", "OBJECT PP", "PRISMA (TANGO)", 
+			"PROGRESS MS-10", "PROGRESS MS-11", "RADIX", "RAINCUBE", "SAUDISAT 1C", "SES 15", "SIRIUS 3", 
+			"SOLRAD 1 (GREB)", "SOYUZ MS-11", "SOYUZ MS-12", "SPEKTR R", "SPUTNIK 3", "SPUTNIK 4", "STARS-ME", 
+			"TACSAT 4", "TECHEDSAT 8", "TEMPEST-D", "TERRA", "THEMIS A", "THEMIS D", "THOR ABLESTAR DEB", 
+			"THOR ABLESTAR R/B", "TIANGONG-2", "TIROS 1", "TRANSIT 1B", "UBAKUSAT", "UNITE", "VANGUARD 2", 
 			"VANGUARD 3", "VANGUARD R/B", "VIASAT 1", "VIASAT 2", "VOSTOK 2", "XMM", "ZA-AEROSAT"];
 			var text = "";
 			var i;
 			for (i = 0; i < spacecraft.length; i++) {
 				text += "<label>" + spacecraft[i] + "<input type=" + "\"" + "checkbox" + "\"" + " id=" + "\"" + spacecraft[i] + "\"" + "onclick=" + "\"" + "javascript:checkClick(this.id,this.checked)" + "\"" + "></label><hr>"
 			}
+			spacecraft.sort();
+			console.log(spacecraft);
+			console.log(spacecraft.length);
 			document.getElementById("listCraft").innerHTML = text;
 		</script>
 	</div>
+	<div id="loading-wrapper">
+  <div id="loading-text">LOADING</div>
+  <div id="loading-content"></div>
+</div>
   </body>
 </html>
