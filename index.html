@@ -9,12 +9,13 @@
       canvas { width: 100%; height: 100% }
     </style>
     <link rel="stylesheet" type="text/css" href="style.css">
-	<script src="//ajax/googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-	<script type="text/javascript">
-	//https://codepen.io/anon/pen/gJBPxE?&page=1
-		$(window).load(function() {
-		$(".loader").fadeOut("slow");
-		})
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+	<script>
+	$(document).ready(function() {
+		setTimeout(function(){
+			$('body').addClass('loaded');
+		}, 1500);
+	});
 	</script>
   </head>
   <body onload="openSideBar()">
@@ -25,21 +26,21 @@
     <script src="scripts/d3.js"></script>
     <script src="scripts/OrbitControls.js"></script>
     <script src="scripts/script.js" type="text/javascript" charset="utf-8" async defer></script>
-
-	<div class="sidenav" id="gsTitle">
+	<div class="sidenav topTitle" id="gsTitle">
 		<p><h1>GroundSites</h1></p>
 	</div>
-	<div class="sidenav" id = "sitenav">
-	<label>Test 1<input type="checkbox" class id="test1" onclick="javascript:showGroundSites(this.id, this.checked)"></label>
+	<div class="sidenav topContent" id = "gsnav">
+	<label>Test 1<input type="checkbox" id="test1" onclick="javascript:showGroundSites(this.id, this.checked)"></label>
 	<hr>
-	<label>Test 2<input type="checkbox" class id="test2" onclick="javascript:showGroundSites(this.id, this.checked)"></label>
+	<label>Test 2<input type="checkbox" id="test2" onclick="javascript:showGroundSites(this.id, this.checked)"></label>
+	<hr>
 	</div>
-	<div class="sidenav" id = "spacecraftTitle">
+	<div class="sidenav bottomTitle" id = "spacecraftTitle">
 	<p><h1>Spacecraft</h1></p>
-		<label>All<input type="checkbox" class id="allCheck" onclick="javascript:checkAll(this.checked)"></label>
+		<label>All<input type="checkbox" id="allCheck" onclick="javascript:checkAll(this.checked)"></label>
 		<br>
 	</div>
-	<div class="sidenav" id = "craftnav">
+	<div class="sidenav bottomContent" id = "craftnav">
 		<div id = "listCraft"></div>
 		<script>
 			var spacecraft = ["1KUNS-PF", "AEROCUBE 12A", "AEROCUBE 12B", "AGILE", "ALTAIR PATHFINDER", "AQUA", 
@@ -59,17 +60,14 @@
 			var text = "";
 			var i;
 			for (i = 0; i < spacecraft.length; i++) {
-				text += "<label>" + spacecraft[i] + "<input type=" + "\"" + "checkbox" + "\"" + " id=" + "\"" + spacecraft[i] + "\"" + "onclick=" + "\"" + "javascript:checkClick(this.id,this.checked)" + "\"" + "></label><hr>"
+				text += "<label>" + spacecraft[i] + "<input type=" + "\"" + "checkbox" + "\"" + " id=" + "\"" + spacecraft[i] + "\"" + " name =" + "\"" + spacecraft[i] + "\"" + " onclick=" + "\"" + "javascript:checkClick(this.id,this.checked)" + "\"" + "></label><hr>"
 			}
-			spacecraft.sort();
-			console.log(spacecraft);
-			console.log(spacecraft.length);
 			document.getElementById("listCraft").innerHTML = text;
 		</script>
 	</div>
 	<div id="loading-wrapper">
-  <div id="loading-text">LOADING</div>
-  <div id="loading-content"></div>
-</div>
+		<div id="loading-text">LOADING</div>
+		<div id="loading-content"></div>
+	</div>
   </body>
 </html>

@@ -29,7 +29,6 @@ IDs = [4, 8, 9, 11, 12, 18, 19, 20, 22, 24, 25, 26, 29, 30, 31, 32, 33, 34, 46, 
 43021, 43231, 43466, 43467, 43468, 43546, 43547, 43548, 43549, 43550, 43551, 43552, 43553, 43554, 43556, 43557, 43558,
 43559, 43560, 43561, 43565, 43595, 43596, 43597, 43598, 43638, 43639, 43640, 43702, 43756, 43870, 44029, 44030, 44031,
 44032, 44033, 44069, 44110, 44188, 44222, 44229]
-print(len(IDs))
 timeNow = datetime.now()
 fl = 'time.txt'
 with open(fl, 'r') as file:
@@ -104,6 +103,7 @@ minutes = range(60*24)
 # creates a list of times for each minute of the above minutes list
 t = ts.utc(d.year, d.month, d.day, d.hour + (d.minute / 60), minutes)
 mountain = timezone('US/Mountain')
+timetemp1 = datetime.now();
 for craft in spacecraftNames:
     # grabs a spacecraft by its name from the dictionary, removing the \n
     # character at the end of the spacecraftNames string
@@ -156,15 +156,5 @@ for craft in spacecraftNames:
     ending = datetime.now()
     print(alt, 'calculated in', ending - beginning, 'seconds')
 
-    # tells when the spacecraft rises above the viewer's horizon, and when
-    # the satellite dips below the horizon
-    """def plot_sky(pass_indices):
-       i, j = pass_indices
-       print('Rises:', t[i].astimezone(mountain))
-       print('Sets:', t[j].astimezone(mountain))
-
-    boundaries, = diff(above_horizon).nonzero()
-    passes = boundaries.reshape(len(boundaries) // 2, 2)
-    print(passes)
-    for g in range(5):
-       plot_sky(passes[g])"""
+timetemp2 = datetime.now()
+print("finished in",timetemp2-timetemp1,"seconds")

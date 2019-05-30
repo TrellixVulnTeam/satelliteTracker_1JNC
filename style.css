@@ -13,8 +13,96 @@ canvas {
 	position:absolute;
 }
 
+.sidenav {
+  width: 0%;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  background-color: #000;
+  background-color: rgba(0,0,0,0.5);
+  overflow-x: hidden;
+  padding-left: 20px;
+  color: white;
+  transition: 1.5s;
+  visible: false;
+}
+
+.sidenav .topTitle {
+	top: 0%;
+	height: 20%;
+}
+
+.sidenav .topContent {
+	top: 10%
+	height: 20%;
+}
+
+.sidenav .bottomTitle {
+	top: 30%
+	height: 20%;
+}
+
+.sidenav .bottomContent {
+	top: 47%
+	height: 53%;
+}
+
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* make scrollbar transparent */
+}
+
+::scrollbar {
+    width: 0px;
+    background: transparent; /* make scrollbar transparent */
+}
+
+label {
+  display: block;
+  padding-left: 10%;
+  padding-bottom: 0;
+  padding-top: 0;
+  margin-right: 5px;
+  text-indent: -15px;
+  height: 20px;
+  overflow: hidden;
+}
+
+input {
+  width: 18px;
+  height: 18px;
+  position: relative;
+  float: right;
+  
+}
+
+hr {
+       display: block;
+       position: relative;
+       padding: 0;
+       margin: 20px;
+       height: 0;
+       width: 92%;
+       max-height: 0;
+       font-size: 1px;
+       line-height: 0;
+       clear: both;
+}
+
+
+path:hover {
+	fill-opacity: 1;
+}
+
+.tags {
+	position:absolute;
+	left: 20px;
+	bottom:40px;
+}
+
 #loading-wrapper {
   position: fixed;
+  background-color: #000;
   width: 100%;
   height: 100%;
   left: 0;
@@ -26,7 +114,7 @@ canvas {
   position: absolute;
   top: 50%;
   left: 50%;
-  color: #999;
+  color: #fff;
   width: 100px;
   height: 30px;
   margin: -7px 0 0 -45px;
@@ -44,6 +132,14 @@ canvas {
   height: 170px;
   margin: -85px 0 0 -85px;
   border: 3px solid #F00;
+  border: 3px solid transparent;
+  border-top-color: #063852;
+  border-bottom-color: #063852;
+  border-radius: 50%;
+  -webkit-animation: loader 2s linear infinite;
+  -moz-animation: loader 2s linear infinite;
+  -o-animation: loader 2s linear infinite;
+  animation: loader 2s linear infinite;
 }
 
 #loading-content:after {
@@ -54,6 +150,14 @@ canvas {
   right: 15px;
   top: 15px;
   bottom: 15px;
+   border: 3px solid transparent;
+  border-top-color: #bcbabe;
+  border-bottom-color: #bcbabe;
+  border-radius: 50%;
+  -webkit-animation: loader 1.5s linear infinite;
+  animation: loader 1.5s linear infinite;
+    -moz-animation: loader 2s linear infinite;
+  -o-animation: loader 2s linear infinite;
 }
 
 #loading-content:before {
@@ -64,23 +168,9 @@ canvas {
   right: 5px;
   top: 5px;
   bottom: 5px;
-}
-
-#loading-content {
   border: 3px solid transparent;
-  border-top-color: #4D658D;
-  border-bottom-color: #4D658D;
-  border-radius: 50%;
-  -webkit-animation: loader 2s linear infinite;
-  -moz-animation: loader 2s linear infinite;
-  -o-animation: loader 2s linear infinite;
-  animation: loader 2s linear infinite;
-}
-
-#loading-content:before {
-  border: 3px solid transparent;
-  border-top-color: #D4CC6A;
-  border-bottom-color: #D4CC6A;
+  border-top-color: #1995ad;
+  border-bottom-color: #1995ad;
   border-radius: 50%;
   -webkit-animation: loader 3s linear infinite;
     -moz-animation: loader 2s linear infinite;
@@ -88,18 +178,7 @@ canvas {
   animation: loader 3s linear infinite;
 }
 
-#loading-content:after {
-  border: 3px solid transparent;
-  border-top-color: #84417C;
-  border-bottom-color: #84417C;
-  border-radius: 50%;
-  -webkit-animation: loader 1.5s linear infinite;
-  animation: loader 1.5s linear infinite;
-    -moz-animation: loader 2s linear infinite;
-  -o-animation: loader 2s linear infinite;
-}
-
-@-webkit-keyframes loaders {
+@-webkit-keyframes loader {
   0% {
     -webkit-transform: rotate(0deg);
     -ms-transform: rotate(0deg);
@@ -125,113 +204,20 @@ canvas {
   }
 }
 
-.sidenav {
-  height: 100%;
-  width: 0%;
-  position: fixed;
-  z-index: 1;
-  top: 30%;
-  left: 0;
-  background-color: #000;
-  background-color: rgba(0,0,0,0.5);
-  overflow-x: hidden;
-  padding-left: 20px;
-  color: white;
-  transition: 1.5s;
-  visible: false;
+.loaded #loading-text {
+	opacity: 0;
+	-webkit-transition: all 0.3s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
+          transition: all 0.3s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
 }
 
-::-webkit-scrollbar {
-    width: 0px;
-    background: transparent; /* make scrollbar transparent */
+.loaded #loading-content {
+	opacity: 0;
+	-webkit-transition: all 0.3s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
+          transition: all 0.3s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
 }
 
-label {
-  display: block;
-  padding-left: 10%;
-  padding-bottom: 0;
-  padding-top: 0;
-  margin-right: 5px;
-  text-indent: -15px;
-  height: 20px;
-  overflow: hidden;
-}
-
-input {
-  width: 18px;
-  height: 18px;
-  position: relative;
-  float: right;
-  
-}
-
-.st-effect-1.st-menu {
-	visibility: visible;
-	-webkit-transform: translate3d(-100%, 0, 0);
-	transform: translate3d(-100%, 0, 0);
-}
-
-hr {
-       display: block;
-       position: relative;
-       padding: 0;
-       margin: 20px;
-       height: 0;
-       width: 92%;
-       max-height: 0;
-       font-size: 1px;
-       line-height: 0;
-       clear: both;
-    }
-	
-.splash {
-	padding: 3em;
-	position:absolute;
-	background-color:#fff;
-	color:#222;
-	left:25vw;
-	top: 10vh;
-	width:50vw;
-	height: 80vh;
-	z-index:200;
-	transition: all 0.3s;
-}
-
-.splash h1 {
-	color: black;
-	text-align:center;
-	padding-top:16px;
-	margin:0;
-}
-
-.splash .btn {
-	margin-left:auto;
-	margin-right:auto;
-	display:block;
-	text-align:center;
-	width:6em;
-	color: #ddd;
-
-	padding:1em 0 1em 0;
-	font-size:200%;
-	cursor:pointer;
-	background-color: #111;
-	transition: 0.2s all ease;
-}
-
-.splash .btn:hover {
-	background-color: #eee;
-	color:#222;
-	transition: 0.1s all ease;
-}
-
-
-path:hover {
-	fill-opacity: 1;
-}
-
-.tags {
-	position:absolute;
-	left: 20px;
-	bottom:40px;
+.loaded #loading-wrapper {
+	visibility: hidden;
+	-webkit-transition: all 0.3s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
+          transition: all 0.3s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
 }

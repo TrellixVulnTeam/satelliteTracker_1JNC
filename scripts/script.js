@@ -1,3 +1,20 @@
+/*
+TODO:
+tab for instructions/explanation:
+	https://www.w3schools.com/howto/howto_js_tabs.asp
+	https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_tabs_fade
+
+show satellite current position, along with updated positions as time goes on
+
+add/remove groundsites. For adding, I may be able to just hold the orbital data in
+python and just rerun the above_horizon on them based on the new groundsite information
+I guess I'll need to do this for removing as well, because I will need to keep the 
+above_horizon data for the other groundsites. I guess I could just create arrays for each
+groundsite and add a 1 if a spacecraft is above the horizon and a 0 if it isn't. I can then
+add the arrays together to a final array to send off to the javascript portion. That way,
+if I'm just removing one groundsite out of five, for example, it would just mean not adding
+the 1s from that groundsite's array to the final array. This could speed things up.
+*/
 (function (window, document, undefined) {
     //ensure strict mode
     'use strict';
@@ -77,7 +94,6 @@
         // planetMesh.add(axes);
         scene.add(planetMesh);
     }
-
 	
 	// creates a ground site (right now there are 2) at a specified latitude and longitude
 	function groundSite() {
@@ -124,7 +140,7 @@
 	
 	// creates the path of the satellite based on the information in the csv
 	function satPath() {
-		//list of orbital points
+		//list of orbital points per spacecraft
 		var OL = 1440;
 		//number of spacecraft to be shown
 		var numCraft = 100;
@@ -232,14 +248,6 @@
         createEarth();
 		satPath();
 		groundSite();
-		splash();
-    }
-	
-	function splash() {
-        d3.select(".btn")
-            .on("click", function () {
-            d3.select(".splash").remove();
-        });
     }
 
     function checkForRaycasts() {

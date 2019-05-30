@@ -9,32 +9,26 @@ function checkClick(name, check) {
 	else {
 		sat.visible = false;
 	}
+	checkForAllChecked(checkboxes,testOne,testTwo);
 }
 
 function checkAll(check) {
 	var checkboxes = document.getElementsByTagName('input');
 	var testOne = document.getElementById('test1');
 	var testTwo = document.getElementById('test2');
-	if (check) {
-		for (var i = 0; i < checkboxes.length; i++) {
-             if (checkboxes[i].type == 'checkbox' && checkboxes[i] != testOne && checkboxes[i] != testTwo) {
-                 checkboxes[i].checked = true;
-             }
-         }
-		for (var key in satDict) {
-			satDict[key].visible = true;
-		}
-	}
-	else {
-		for (var i = 0; i < checkboxes.length; i++) {
-            if (checkboxes[i].type == 'checkbox' && checkboxes[i] != testOne && checkboxes[i] != testTwo) {
-                checkboxes[i].checked = false;
-            }
+	var allButton = document.getElementById('allCheck');
+	for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].type == 'checkbox' && checkboxes[i] != testOne && checkboxes[i] != testTwo && checkboxes[i] != allButton) {
+            if (check) {
+				checkboxes[i].checked = true;
+				satDict[checkboxes[i].name].visible = true;
+			}
+			else {
+				checkboxes[i].checked = false;
+				satDict[checkboxes[i].name].visible = false;
+			}
         }
-		for (var key in satDict) {
-			satDict[key].visible = false;
-		}
-	}
+    }
 }
 
 function openSideBar() {
@@ -43,10 +37,10 @@ function openSideBar() {
 	document.getElementById("gsTitle").style.height = "20%"
 	document.getElementById("gsTitle").style.top = "0%";
 	document.getElementById("gsTitle").visible = true;
-	document.getElementById("sitenav").style.width = "20%";
-	document.getElementById("sitenav").style.height = "20%"
-	document.getElementById("sitenav").style.top = "10%";
-	document.getElementById("sitenav").visible = true;
+	document.getElementById("gsnav").style.width = "20%";
+	document.getElementById("gsnav").style.height = "20%"
+	document.getElementById("gsnav").style.top = "10%";
+	document.getElementById("gsnav").visible = true;
 	document.getElementById("spacecraftTitle").style.width = "20%";
 	document.getElementById("spacecraftTitle").style.height = "20%"
 	document.getElementById("spacecraftTitle").style.top = "30%";
@@ -55,7 +49,7 @@ function openSideBar() {
 	document.getElementById("craftnav").style.height = "53%";
 	document.getElementById("craftnav").style.top = "47%";
 	document.getElementById("craftnav").visible = true;
-	}, 2000);
+	}, 1000);
 }
 
 function showGroundSites(name, check) {
@@ -65,5 +59,23 @@ function showGroundSites(name, check) {
 	}
 	else {
 		gs.visible = false;
+	}
+}
+
+function checkForAllChecked(checkboxes, testOne, testTwo) {
+	var numChecked = 0;
+	var allButton = document.getElementById('allCheck');
+	for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].type == 'checkbox' && checkboxes[i] != testOne && checkboxes[i] != testTwo && checkboxes[i] != allButton) {
+            if (checkboxes[i].checked == true) {
+				numChecked += 1;
+			}
+        }
+    }
+	if (numChecked == 100) {
+		allButton.checked = true;
+	}
+	else {
+		allButton.checked = false;
 	}
 }
