@@ -25,7 +25,12 @@ canvas {
   color: white;
   transition: 1.5s;
   visible: false;
+  scrollbar-width: none; /*for firefox*/
 }
+
+.spacecraftCheck {}
+
+.gsCheck {}
 
 .sidenav .topTitle {
 	top: 0%;
@@ -49,12 +54,11 @@ canvas {
 
 ::-webkit-scrollbar {
     width: 0px;
-    background: transparent; /* make scrollbar transparent */
+    background: transparent; /* make scrollbar transparent in chrome */
 }
 
-::scrollbar {
-    width: 0px;
-    background: transparent; /* make scrollbar transparent */
+input {
+    outline: 0; /*for firefox*/
 }
 
 label {
@@ -121,6 +125,7 @@ path:hover {
   text-align: center;
   font-family: 'PT Sans Narrow', sans-serif;
   font-size: 20px;
+  scrollbar-width: none; /*for firefox*/
 }
 
 #loading-content {
@@ -140,6 +145,7 @@ path:hover {
   -moz-animation: loader 2s linear infinite;
   -o-animation: loader 2s linear infinite;
   animation: loader 2s linear infinite;
+  scrollbar-width: none; /*for firefox*/
 }
 
 #loading-content:after {
@@ -158,6 +164,7 @@ path:hover {
   animation: loader 1.5s linear infinite;
     -moz-animation: loader 2s linear infinite;
   -o-animation: loader 2s linear infinite;
+  scrollbar-width: none; /*for firefox*/
 }
 
 #loading-content:before {
@@ -176,6 +183,7 @@ path:hover {
     -moz-animation: loader 2s linear infinite;
   -o-animation: loader 2s linear infinite;
   animation: loader 3s linear infinite;
+  scrollbar-width: none; /*for firefox*/
 }
 
 @-webkit-keyframes loader {
@@ -206,18 +214,18 @@ path:hover {
 
 .loaded #loading-text {
 	opacity: 0;
-	-webkit-transition: all 0.3s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
-          transition: all 0.3s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
+	-webkit-transition: all 0.5s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
+          transition: all 0.5s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
 }
 
 .loaded #loading-content {
 	opacity: 0;
-	-webkit-transition: all 0.3s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
-          transition: all 0.3s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
+	-webkit-transition: all 0.5s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
+          transition: all 0.5s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
 }
 
 .loaded #loading-wrapper {
 	visibility: hidden;
-	-webkit-transition: all 0.3s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
-          transition: all 0.3s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
+	-webkit-transition: all 0.5s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
+          transition: all 0.5s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
 }
