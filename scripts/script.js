@@ -31,6 +31,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
     window.groundSites = {};
 	var horizonArr = [];
 	var groundData = [[],[],[],[],[],[],[],[],[],[]];
+	var listNames = [];
 	var spacecraft = ["1KUNS-PF", "AEROCUBE 12A", "AEROCUBE 12B", "AGILE", "ALTAIR PATHFINDER", "AQUA", 
 	"ASTERIA", "BANXING-2", "CATSAT-1", "CATSAT-2", "CUBERRT", "CYGNUS NG-11", "DELLINGR (RBLE)", "DELPHINI", 
 	"DISCOVERER 11", "DISCOVERER 13", "DISCOVERER 5", "DISCOVERER 5 CAPSULE", "DISCOVERER 6", "DISCOVERER 7", 
@@ -58,6 +59,8 @@ the 1s from that groundsite's array to the final array. This could speed things 
         mouse.x = (event.clientX / sceneW) * 2 - 1;
         mouse.y = -(event.clientY / windowH) * 2 + 1;
     }
+
+	window.addEventListener( 'resize', onWindowResize, false );
 	
 	function openSideBar() {
 		setTimeout(function(){
@@ -79,32 +82,49 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		document.getElementById("craftnav").visible = true;
 		}, 500);
 	}
-	
-	window.addEventListener( 'resize', onWindowResize, false );
-	
+		
 	document.querySelector('#gsAll').onclick = function (ev) {
 		checkAll(ev.target.checked, 'gsCheck');
+	}
+	document.querySelector('#gsAll').onkeyup = function (ev) {
+		ev.preventDefault();
 	}
 	document.querySelector('#listgs').onclick = function (ev) {
 		checkClick(ev.target.name,ev.target.checked,'gsCheck');
 	}
+	document.querySelector('#listgs').onkeyup = function (ev) {
+		ev.preventDefault();
+	}
 	document.querySelector('#allCheck').onclick = function (ev) {
 		checkAll(ev.target.checked, 'spacecraftCheck');
+	}
+	document.querySelector('#allCheck').onkeyup = function (ev) {
+		ev.preventDefault();
 	}
 	document.querySelector('#listCraft').onclick = function (ev) {
 		checkClick(ev.target.name,ev.target.checked,'spacecraftCheck');
 	}
+	document.querySelector('#listCraft').onkeyup = function (ev) {
+		ev.preventDefault();
+	}
 	
 	function addVisiblePath(checkboxes) {
-		//TODO add function to change the color of the part of each path that is visible to the active groundsites
-		for (var i = 0; i < 14400; i++) {
-			var totalVisible = 0;
+		var path = "EXPLORER 1";
+		for (var i = 0; i < 1440; i++) {
+			var current = 0;
 			for (var j = 0; j < checkboxes.length; j++) {
-				if (checkboxes[j].checked) {
-					totalVisible += groundData[j][i];
+				if (groundData[checkboxes[j]][i] > 0) {
+					current += 1;
 				}
 			}
-			horizonArr.push(totalVisible);
+			if (current > 0) {
+				satDict[path].geometry.colors[i]= new THREE.Color(0xff0000);
+				satDict[path].geometry.colorsNeedUpdate = true;
+			}
+			else {
+				satDict[path].geometry.colors[i]= new THREE.Color(0x0000ff);
+				satDict[path].geometry.colorsNeedUpdate = true;
+			}
 		}
 	}
 	
@@ -133,7 +153,13 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			}
 		}
 		if (cl == 'gsCheck') {
-			addVisiblePath(checkboxes);
+			var activeGS = [];
+			for (var i = 0; i < checkboxes.length; i++) {
+				if (checkboxes[i].checked) {
+					activeGS.push(i);
+				}
+			}
+			addVisiblePath(activeGS);
 		}
 	}
 	
@@ -181,7 +207,13 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			allButton.checked = false;
 		}
 		if (cl == 'gsCheck') {
-			addVisiblePath(checkboxes);
+			var activeGS = [];
+			for (var i = 0; i < checkboxes.length; i++) {
+				if (checkboxes[i].checked) {
+					activeGS.push(i);
+				}
+			}
+			addVisiblePath(activeGS);
 		}
 	}
 	
@@ -292,6 +324,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			groundData[8].push(rawSatData[i].h9);
 			groundData[9].push(rawSatData[i].h10);
 		}
+		
 	}
 	
 	// creates the path of the satellite based on the information in the csv
@@ -306,11 +339,11 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		var NS = numCraft * OL;
 		var material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
 		var geometry = new THREE.Geometry();
-		// prev and current are used to determine whether the previous and current orbital points are above the horizon.
-		var prev = 0, current;
+		
 		var r, lat, lon, x, y, z;
 		var satName = rawSatData[0].name;
-		var pathColor = 0x0000ff;
+		listNames.push(satName);
+		
 		for (var i = 0; i < NS; i++) {
 			//if the satellite changes, add the previous satellite's path to the scene and start a new path
 			if (rawSatData[i].name != satName) {
@@ -321,10 +354,11 @@ the 1s from that groundsite's array to the final array. This could speed things 
 				line.visible = false;
 				satDict[satName] = line;
 				satName = rawSatData[i].name;
+				listNames.push(satName);
 				geometry = new THREE.Geometry();
 				material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
 			}
-			current = rawSatData[i].horizon;
+			
 			//some of the seconds are off in the data sent from the python application. This rectifies the issue
 			if (rawSatData[i].second > 30) {
 				rawSatData[i].second = 0;
@@ -347,47 +381,17 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			x = -((r) * Math.sin(phi)*Math.cos(theta));
 			z = ((r) * Math.sin(phi)*Math.sin(theta));
 			y = ((r) * Math.cos(phi));
-			// if the satellite path becomes visible to the groundsite's position, change the path color to red
-			if (current == 1 && prev == 0) {
-				pathColor = 0xff0000;
-				geometry.colors[i - (OL*iter)] = new THREE.Color(pathColor);
-				geometry.vertices.push(new THREE.Vector3(x, y, z));
-				
-				//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
-			}
-			// if the satellite path lowers below the ground site's horizon, change the path color back to blue
-			else if (current == 0 && prev == 1) {
-				pathColor = 0x0000ff;
-				geometry.colors[i - (OL*iter)] = new THREE.Color(pathColor);
-				//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
-				geometry.vertices.push(new THREE.Vector3(x, y, z));
-				
-			}
-			// otherwise, the color of the path should stay what the <if> or <else if> changed it to.
-			else {
-				geometry.colors[i - (OL*iter)] = new THREE.Color(pathColor);
-				geometry.vertices.push(new THREE.Vector3(x, y, z));
-				
-			}
-			prev = current;
+			
+			geometry.colors[i - (OL*iter)] = new THREE.Color(0x0000ff);
+			geometry.vertices.push(new THREE.Vector3(x, y, z));
+			
 		}
 		var line = new THREE.Line(geometry, material);
 		line.name = satName;
 		line.visible = false;
 		satDict[satName] = line;
-		//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
 		scene.add(line);	
 	}
-	
-    // Draw a green line along the Y axis (shows the poles) (not currently being used)
-    function createDistanceLine() {
-        var poleMat = new THREE.LineBasicMaterial({color: 0x00ff00});
-        var poleGeo = new THREE.Geometry();
-        poleGeo.vertices.push(new THREE.Vector3(0, -15, 0), new THREE.Vector3(0, 15, 0));
-        var line = new THREE.Line(poleGeo, poleMat);
-		//line.rotateX((-23.4 * Math.PI) / 180); //use this if the globe is rotated to show the true position of the poles
-        scene.add(line);
-    }
 	
     function init() {
         window.addEventListener('mousemove', onMouseMove, false);
@@ -415,7 +419,6 @@ the 1s from that groundsite's array to the final array. This could speed things 
         if (intersects.length != 0) {
             if (print) print = false;
             if (intersects[0].object.type == "Line") {
-                // intersects[0].object.material.color.set( 0xffff00 );
                 intersects[0].object.material.opacity = 1.0;
             }
         }
