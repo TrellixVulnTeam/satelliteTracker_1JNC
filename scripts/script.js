@@ -31,28 +31,12 @@ the 1s from that groundsite's array to the final array. This could speed things 
     window.groundSites = {};
 	var horizonArr = [];
 	var groundData = [[],[],[],[],[],[],[],[],[],[]];
-	var listNames = [];
-	var spacecraft = ["1KUNS-PF", "AEROCUBE 12A", "AEROCUBE 12B", "AGILE", "ALTAIR PATHFINDER", "AQUA", 
-	"ASTERIA", "BANXING-2", "CATSAT-1", "CATSAT-2", "CUBERRT", "CYGNUS NG-11", "DELLINGR (RBLE)", "DELPHINI", 
-	"DISCOVERER 11", "DISCOVERER 13", "DISCOVERER 5", "DISCOVERER 5 CAPSULE", "DISCOVERER 6", "DISCOVERER 7", 
-	"DISCOVERER 8", "DRAGON CRS-17", "ECHO 1", "EQUISAT", "EXOS D (AKEBONO)", "EXPLORER 1", "EXPLORER 4", "EXPLORER 7", 
-	"EXPRESS AM-44", "FUNCUBE 1", "GALILEO 26 (2C2)", "GEOTAIL", "GLOBALSTAR M096", "HALOSAT", "HARBINGER", 
-	"HST", "IBEX", "INTEGRAL", "IRAZU", "ISS (ZARYA)", "ISS DEB (SEDA-AP)", "KESTREL EYE 2M", "KMS 4", 
-	"LANDSAT 8", "LEMUR 2 ALEXANDER", "LEMUR 2 TOMHENDERSON", "LEMUR 2 VU", "LEMUR 2 YUASA", "METEOR M2", 
-	"MMS 1", "NAVSTAR 75 (USA 265)", "NJUST-1", "NOAA 19", "NSIGHT-1", "O3B FM15", "OBJECT NZ", "OBJECT PB", 
-	"OBJECT PC", "OBJECT PG", "OBJECT PH", "OBJECT PJ", "OBJECT PK", "OBJECT PN", "OBJECT PP", "PRISMA (TANGO)", 
-	"PROGRESS MS-10", "PROGRESS MS-11", "RADIX", "RAINCUBE", "SAUDISAT 1C", "SES 15", "SIRIUS 3", 
-	"SOLRAD 1 (GREB)", "SOYUZ MS-11", "SOYUZ MS-12", "SPEKTR R", "SPUTNIK 3", "SPUTNIK 4", "STARS-ME", 
-	"TACSAT 4", "TECHEDSAT 8", "TEMPEST-D", "TERRA", "THEMIS A", "THEMIS D", "THOR ABLESTAR DEB", 
-	"THOR ABLESTAR R/B", "TIANGONG-2", "TIROS 1", "TRANSIT 1B", "UBAKUSAT", "UNITE", "VANGUARD 2", 
-	"VANGUARD 3", "VANGUARD R/B", "VIASAT 1", "VIASAT 2", "VOSTOK 2", "XMM", "ZA-AEROSAT"];
-	var sites = ["NASA HQ","NASA Mission Control Center","Kennedy Space Center","Moscow Mission Control Center",
-	"Baikonur Cosmodrome","Canadian Space Center","German Space Operation Center","BIOTESC (Zurich)",
-	"Guiana Space Center","Tsukuba Space Center (JAXA)"];
-	var gsLat = [38.883056,29.557857,28.579680,55.912104,45.963929,45.521186,48.086873,46.994580,5.224441,36.065140];
-	var gsLon = [-77.017369,-95.089023,-80.653010,37.810254,63.305125,-73.393632,11.280641,8.310018,-52.776433,140.127613];
+	var spacecraft = [];
+	var sites = [];
 	window.satDict = {};
 	var rawSatData = []; //the array holding all the satellite data after parsing csv
+	
+	
     function onMouseMove(event) {
         // calculate mouse position in normalized device coordinates
         // (-1 to +1) for both components
@@ -109,7 +93,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 	}
 	
 	function addVisiblePath(checkboxes) {
-		var path = "EXPLORER 1";
+		var path = "AEROCUBE 12A";
 		for (var i = 0; i < 1440; i++) {
 			var current = 0;
 			for (var j = 0; j < checkboxes.length; j++) {
@@ -123,6 +107,24 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			}
 			else {
 				satDict[path].geometry.colors[i]= new THREE.Color(0x0000ff);
+				satDict[path].geometry.colorsNeedUpdate = true;
+			}
+		}
+		
+		var path = "AGILE";
+		for (var i = 2880; i < 4320; i++) {
+			var current = 0;
+			for (var j = 0; j < checkboxes.length; j++) {
+				if (groundData[checkboxes[j]][i] > 0) {
+					current += 1;
+				}
+			}
+			if (current > 0) {
+				satDict[path].geometry.colors[i-2880]= new THREE.Color(0xff0000);
+				satDict[path].geometry.colorsNeedUpdate = true;
+			}
+			else {
+				satDict[path].geometry.colors[i-2880]= new THREE.Color(0x0000ff);
 				satDict[path].geometry.colorsNeedUpdate = true;
 			}
 		}
@@ -219,8 +221,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 	
 	function craftList() {
 		var text = "";
-		var i;
-		for (i = 0; i < spacecraft.length; i++) {
+		for (var i = 0; i < spacecraft.length; i++) {
 			text += "<label>" + spacecraft[i] + "<input type=" + "\"" + "checkbox" + "\"" + " id=" + "\"" + spacecraft[i] + "\"" + "class=" + "\"" + "spacecraftCheck" + "\"" + " name =" + "\"" + spacecraft[i] + "\"" + "></label><hr>"
 		}
 		document.getElementById("listCraft").innerHTML = text;
@@ -228,9 +229,9 @@ the 1s from that groundsite's array to the final array. This could speed things 
 	
 	function gsList() {
 		var text = "";
-		var i;
-		for (i = 0; i < sites.length; i++) {
-			text += "<label>" + sites[i] + "<input type=" + "\"" + "checkbox" + "\"" + " id=" + "\"" + sites[i] + "\"" + "class=" + "\"" + "gsCheck" + "\"" + " name =" + "\"" + sites[i] + "\"" + "></label><hr>"
+		
+		for (var i = 0; i < sites.length; i++) {
+			text += "<label>" + sites[i].name + "<input type=" + "\"" + "checkbox" + "\"" + " id=" + "\"" + sites[i].name + "\"" + "class=" + "\"" + "gsCheck" + "\"" + " name =" + "\"" + sites[i].name + "\"" + "></label><hr>"
 		}
 		document.getElementById("listgs").innerHTML = text;
 	}
@@ -246,8 +247,6 @@ the 1s from that groundsite's array to the final array. This could speed things 
         camera.position.z = 22;
 		camera.position.y = 13;
         renderer.shadowMap.enabled = false;
-		gsList();
-		craftList();
         manager = new THREE.LoadingManager();
         manager.onLoad = function () {openSideBar();render();};
     }
@@ -262,7 +261,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
     function setupControls() {
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.04;
+        controls.autoRotateSpeed = 0.05;
         controls.rotateSpeed = 0.2;
         controls.enableDamping = true;
         controls.dampingFactor = 0.3;
@@ -292,9 +291,9 @@ the 1s from that groundsite's array to the final array. This could speed things 
 	// creates a ground site (right now there are 2) at a specified latitude and longitude
 	function groundSite() {
 		var r = 10;
-		for (var i = 0; i < gsLat.length; i++) {
-			var lat = gsLat[i];
-			var lon = gsLon[i];
+		for (var i = 0; i < sites.length; i++) {
+			var lat = sites[i].latidute;
+			var lon = sites[i].longitude;
 			var phi   = (90-lat)*(Math.PI/180);
 			var theta = (lon+180)*(Math.PI/180);
 			var x = -((r) * Math.sin(phi)*Math.cos(theta));
@@ -308,7 +307,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			//rotates the cube to radiate out from the center of the globe
 			cube.lookAt(new THREE.Vector3(0, 0, 0));
 			cube.visible = false;
-			var gName = sites[i];
+			var gName = sites[i].name;
 			groundSites[gName] = cube;			
 			scene.add(cube);
 		}
@@ -332,7 +331,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		//list of orbital points per spacecraft
 		var OL = 1440;
 		//number of spacecraft to be shown
-		var numCraft = 100;
+		var numCraft = rawSatData.length/OL;
 		//number of the satellite, starts at 0, used to end an orbit's path and start a new one
 		var iter = 0;
 		//total length of the list of orbital points for the satellites
@@ -342,7 +341,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		
 		var r, lat, lon, x, y, z;
 		var satName = rawSatData[0].name;
-		listNames.push(satName);
+		spacecraft.push(satName);
 		
 		for (var i = 0; i < NS; i++) {
 			//if the satellite changes, add the previous satellite's path to the scene and start a new path
@@ -354,7 +353,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 				line.visible = false;
 				satDict[satName] = line;
 				satName = rawSatData[i].name;
-				listNames.push(satName);
+				spacecraft.push(satName);
 				geometry = new THREE.Geometry();
 				material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
 			}
@@ -390,7 +389,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		line.name = satName;
 		line.visible = false;
 		satDict[satName] = line;
-		scene.add(line);	
+		scene.add(line);
 	}
 	
     function init() {
@@ -406,6 +405,8 @@ the 1s from that groundsite's array to the final array. This could speed things 
         createEarth();
 		satPath();
 		groundSite();
+		gsList();
+		craftList();
     }
 
     function checkForRaycasts() {
@@ -433,9 +434,19 @@ the 1s from that groundsite's array to the final array. This could speed things 
         renderer.render(scene, camera);
     }
 	
+	d3.csv('data/groundData.csv', function (d) {
+        return {
+			name: d.name,
+			latidute: +d.lat,
+			longitude: +d.lon
+        };
+    }, function (data) {
+        sites = data.slice(); //copy 
+    });
+	
 	// pulls the satellite data from the .csv and populates a list with it
 	//https://d3-wiki.readthedocs.io/zh_CN/master/CSV/
-	d3.csv('data/position.csv', function (d) {
+	d3.csv('data/satelliteData.csv', function (d) {
         return {
 			name: d.name,
 			latitude: +d.latitude,
@@ -447,18 +458,19 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			hour: +d.hour,
 			minute: +d.minute,
 			second: +d.second,
-            h1: d.h1,
-			h2: d.h2,
-			h3: d.h3,
-			h4: d.h4,
-			h5: d.h5,
-			h6: d.h6,
-			h7: d.h7,
-			h8: d.h8,
-			h9: d.h9,
-			h10: d.h10
+            h1: +d.h1,
+			h2: +d.h2,
+			h3: +d.h3,
+			h4: +d.h4,
+			h5: +d.h5,
+			h6: +d.h6,
+			h7: +d.h7,
+			h8: +d.h8,
+			h9: +d.h9,
+			h10: +d.h10
         };
     }, function (data) {
+		console.log(data[0].name);
         rawSatData = data.slice(); //copy 
 		init();
     });
