@@ -68,6 +68,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		document.getElementById("craftnav").style.top = "54%";
 		document.getElementById("craftnav").visible = true;
 		}, 500);
+		$('body').addClass('loaded');
 	}
 		
 	document.querySelector('#gsAll').onclick = function (ev) {
@@ -304,7 +305,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
         //planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
         var planetMat = new THREE.MeshBasicMaterial({color: 0xffffff});
         var TextureLoader = new THREE.TextureLoader(manager);
-        TextureLoader.load('img/marble3.jpg', function (texture) {
+        TextureLoader.load('img/marble.jpg', function (texture) {
             texture.anisotropy = 8;
             planetMat.map = texture;
             planetMat.needsUpdate = false;
