@@ -24,16 +24,19 @@ the 1s from that groundsite's array to the final array. This could speed things 
     var windowW = window.innerWidth;
     var sceneW = window.innerWidth / .8; //      size of the whole screen, adding /.8; after innerWidth moves the globe to the right
     var windowH = window.innerHeight;
+	
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
+	
     var mouse = new THREE.Vector2();
     var parseDate = d3.time.format("%m/%d/%Y").parse;
-    window.groundSites = {};
-	var horizonArr = [];
-	var groundData = [[],[],[],[],[],[],[],[],[],[]];
+    var groundSites = {};
+	var OL;
+	var numCraft;
 	var spacecraft = [];
+	var len;
 	var sites = [];
-	window.satDict = {};
+	var satDict = {};
 	var rawSatData = []; //the array holding all the satellite data after parsing csv
 	
 	
@@ -92,40 +95,66 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		ev.preventDefault();
 	}
 	
-	function addVisiblePath(checkboxes) {
-		var path = "AEROCUBE 12A";
-		for (var i = 0; i < 1440; i++) {
-			var current = 0;
-			for (var j = 0; j < checkboxes.length; j++) {
-				if (groundData[checkboxes[j]][i] > 0) {
-					current += 1;
-				}
-			}
-			if (current > 0) {
-				satDict[path].geometry.colors[i]= new THREE.Color(0xff0000);
-				satDict[path].geometry.colorsNeedUpdate = true;
-			}
-			else {
-				satDict[path].geometry.colors[i]= new THREE.Color(0x0000ff);
-				satDict[path].geometry.colorsNeedUpdate = true;
-			}
+	function searchBox(k, boxes) {
+		for (var i = 0; i < boxes.length; i++) {
+			if (boxes[i] == k) return true;
 		}
-		
-		var path = "AGILE";
-		for (var i = 2880; i < 4320; i++) {
-			var current = 0;
-			for (var j = 0; j < checkboxes.length; j++) {
-				if (groundData[checkboxes[j]][i] > 0) {
-					current += 1;
+		return false;
+	}
+	
+	function addVisiblePath(checkboxes) {
+		for (var i = 0; i < numCraft; i++) {
+			var pathColor = 0x0000ff;
+			var satName = rawSatData[i*OL].name;
+			var prev = 0;
+			for (var j = 0; j < OL - 1; j++) {
+				var current = 0;
+				if (searchBox(0, checkboxes)) {
+					current += rawSatData[i*OL+j].h1;
 				}
-			}
-			if (current > 0) {
-				satDict[path].geometry.colors[i-2880]= new THREE.Color(0xff0000);
-				satDict[path].geometry.colorsNeedUpdate = true;
-			}
-			else {
-				satDict[path].geometry.colors[i-2880]= new THREE.Color(0x0000ff);
-				satDict[path].geometry.colorsNeedUpdate = true;
+				if (searchBox(1, checkboxes)) {
+					current += rawSatData[i*OL+j].h2;
+				}
+				if (searchBox(2, checkboxes)) {
+					current += rawSatData[i*OL+j].h3;
+				}
+				if (searchBox(3, checkboxes)) {
+					current += rawSatData[i*OL+j].h4;
+				}
+				if (searchBox(4, checkboxes)) {
+					current += rawSatData[i*OL+j].h4;
+				}
+				if (searchBox(5, checkboxes)) {
+					current += rawSatData[i*OL+j].h6;
+				}
+				if (searchBox(6, checkboxes)) {
+					current += rawSatData[i*OL+j].h7;
+				}
+				if (searchBox(7, checkboxes)) {
+					current += rawSatData[i*OL+j].h8;
+				}
+				if (searchBox(8, checkboxes)) {
+					current += rawSatData[i*OL+j].h9;
+				}
+				if (searchBox(9, checkboxes)) {
+					current += rawSatData[i*OL+j].h10;
+				}
+				
+				if (current > 0 && prev == 0) {
+					pathColor = 0xff0000;
+					satDict[satName].geometry.colors[j] = new THREE.Color(pathColor);
+					satDict[satName].geometry.colorsNeedUpdate = true;
+				}
+				else if (current == 0 && prev > 0) {
+					pathColor = 0x0000ff;
+					satDict[satName].geometry.colors[j] = new THREE.Color(pathColor);
+					satDict[satName].geometry.colorsNeedUpdate = true;
+				}
+				else {
+					satDict[satName].geometry.colors[j] = new THREE.Color(pathColor);
+					satDict[satName].geometry.colorsNeedUpdate = true;
+				}
+				prev = current;
 			}
 		}
 	}
@@ -288,7 +317,6 @@ the 1s from that groundsite's array to the final array. This could speed things 
         scene.add(planetMesh);
     }
 	
-	// creates a ground site (right now there are 2) at a specified latitude and longitude
 	function groundSite() {
 		var r = 10;
 		for (var i = 0; i < sites.length; i++) {
@@ -311,85 +339,52 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			groundSites[gName] = cube;			
 			scene.add(cube);
 		}
-		for (var i = 0; i < 144000; i++) {
-			groundData[0].push(rawSatData[i].h1);
-			groundData[1].push(rawSatData[i].h2);
-			groundData[2].push(rawSatData[i].h3);
-			groundData[3].push(rawSatData[i].h4);
-			groundData[4].push(rawSatData[i].h5);
-			groundData[5].push(rawSatData[i].h6);
-			groundData[6].push(rawSatData[i].h7);
-			groundData[7].push(rawSatData[i].h8);
-			groundData[8].push(rawSatData[i].h9);
-			groundData[9].push(rawSatData[i].h10);
-		}
-		
 	}
 	
-	// creates the path of the satellite based on the information in the csv
+	// creates the path of the satellites based on the information in the csv
 	function satPath() {
 		//list of orbital points per spacecraft
-		var OL = 1440;
+		OL = len[0].l;
 		//number of spacecraft to be shown
-		var numCraft = rawSatData.length/OL;
-		//number of the satellite, starts at 0, used to end an orbit's path and start a new one
-		var iter = 0;
-		//total length of the list of orbital points for the satellites
-		var NS = numCraft * OL;
-		var material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
-		var geometry = new THREE.Geometry();
-		
+		numCraft = rawSatData.length/OL;
 		var r, lat, lon, x, y, z;
-		var satName = rawSatData[0].name;
-		spacecraft.push(satName);
 		
-		for (var i = 0; i < NS; i++) {
-			//if the satellite changes, add the previous satellite's path to the scene and start a new path
-			if (rawSatData[i].name != satName) {
-				iter += 1;
-				var line = new THREE.Line( geometry, material );
-				line.name = satName;
-				scene.add(line);
-				line.visible = false;
-				satDict[satName] = line;
-				satName = rawSatData[i].name;
-				spacecraft.push(satName);
-				geometry = new THREE.Geometry();
-				material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
-			}
-			
-			//some of the seconds are off in the data sent from the python application. This rectifies the issue
-			if (rawSatData[i].second > 30) {
-				rawSatData[i].second = 0;
-				rawSatData[i].minute += 1;
-			}
-			else {
-				rawSatData[i].second = 0;
-			}
-			
-			//r = radius of the orbital point
-			r = ((rawSatData[i].elevation+6378)*10/6378);
-			//lat = satellite latitude
-			lat = rawSatData[i].latitude;
-			//lon = satellite longitute
-			lon = rawSatData[i].longitude;
-			//phi and theta are used to change the keplarian orbital points to an x,y,z format that the globe can use.
-			var phi = (90-lat)*(Math.PI/180);
-			var theta = (lon+180)*(Math.PI/180);
+		for (var i = 0; i < numCraft; i++) {
+			var material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
+			var geometry = new THREE.Geometry();
+			var satName = rawSatData[i*OL].name;
+			var prev = 0;
+			for (var j = 0; j < OL - 1; j++) {
+				var current = 0;
+				if (rawSatData[i*OL+j].second > 30) {
+				rawSatData[i*OL+j].second = 0;
+				rawSatData[i*OL+j].minute += 1;
+				}
+				else {
+					rawSatData[i*OL+j].second = 0;
+				}
 
-			x = -((r) * Math.sin(phi)*Math.cos(theta));
-			z = ((r) * Math.sin(phi)*Math.sin(theta));
-			y = ((r) * Math.cos(phi));
-			
-			geometry.colors[i - (OL*iter)] = new THREE.Color(0x0000ff);
-			geometry.vertices.push(new THREE.Vector3(x, y, z));
-			
+				r = ((rawSatData[i*OL+j].elevation+6378)*10/6378);
+				lat = rawSatData[i*OL+j].latitude;
+				lon = rawSatData[i*OL+j].longitude;
+				var phi = (90-lat)*(Math.PI/180);
+				var theta = (lon+180)*(Math.PI/180);
+
+				x = -((r) * Math.sin(phi)*Math.cos(theta));
+				z = ((r) * Math.sin(phi)*Math.sin(theta));
+				y = ((r) * Math.cos(phi));
+				
+				geometry.colors[j] = new THREE.Color(0x0000ff);
+				geometry.vertices.push(new THREE.Vector3(x, y, z));
+				prev = current;
+			}
+			var line = new THREE.Line( geometry, material );
+			line.name = satName;
+			scene.add(line);
+			line.visible = false;
+			satDict[satName] = line;
+			spacecraft.push(satName);
 		}
-		var line = new THREE.Line(geometry, material);
-		line.name = satName;
-		line.visible = false;
-		satDict[satName] = line;
-		scene.add(line);
 	}
 	
     function init() {
@@ -438,10 +433,18 @@ the 1s from that groundsite's array to the final array. This could speed things 
         return {
 			name: d.name,
 			latidute: +d.lat,
-			longitude: +d.lon
+			longitude: +d.lon,
         };
     }, function (data) {
         sites = data.slice(); //copy 
+    });
+	
+	d3.csv('data/orbitLength.csv', function (d) {
+        return {
+			l: +d.len
+        };
+    }, function (data) {
+        len = data.slice(); //copy 
     });
 	
 	// pulls the satellite data from the .csv and populates a list with it
@@ -470,8 +473,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			h10: +d.h10
         };
     }, function (data) {
-		console.log(data[0].name);
-        rawSatData = data.slice(); //copy 
+        rawSatData = data.slice(); //copy
 		init();
     });
 	

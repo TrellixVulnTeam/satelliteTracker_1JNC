@@ -12,7 +12,6 @@ import json
 # import mysql.connector
 from datetime import datetime, timedelta
 from pytz import timezone
-import collections
 
 
 
@@ -37,10 +36,6 @@ groundSites = {"NASA HQ (D.C.)": Topos('38.883056 N', '-77.017369 E'), "NASA Mis
 "German Space Operation Center": Topos('48.086873 N', '11.280641 E'), "BIOTESC (Zurich)": Topos('46.994580 N', '8.310018 E'),
 "Guiana Space Center": Topos('5.224441 N', '-52.776433 E'), "Tsukuba Space Center (Japan)": Topos('36.065140 N', '140.127613 E')}
 horizonData = []
-
-
-print(groundSites["NASA HQ (D.C.)"].latitude.degrees)
-print(groundSites["NASA HQ (D.C.)"].longitude.degrees)
 
 timeNow = datetime.now()
 fl = 'time.txt'
@@ -100,7 +95,8 @@ f.close()
 with open(fl, 'a') as file:
 	file.write('name,')
 	file.write('lat,')
-	file.write('lon,\n')
+	file.write('lon,')
+	file.write('lenlen\n')
 for site in groundSites:
 	with open(fl, 'a') as file:
 		file.write(site + ',')
@@ -122,13 +118,37 @@ with open(fl, 'a') as file:
 	file.write('hour,')
 	file.write('minute,')
 	file.write('second,')
-	for i in range(len(groundSites)):
-		a = i+1;
-		file.write('h'+str(a) + ',')
-	file.write('\n')
+	file.write('h1,')
+	file.write('h2,')
+	file.write('h3,')
+	file.write('h4,')
+	file.write('h5,')
+	file.write('h6,')
+	file.write('h7,')
+	file.write('h8,')
+	file.write('h9,')
+	file.write('h10,')
 ts = load.timescale()
+
+ground = Topos('38.883056 N', '-77.017369 E')
+ground2 = Topos('29.557857 N', '-95.089023 E')
+ground3 = Topos('28.579680 N', '-80.653010 E')
+ground4 = Topos('55.912104 N', '37.810254 E')
+ground5 = Topos('45.963929 N', '63.305125 E')
+ground6 = Topos('45.521186 N', '-73.393632 E')
+ground7 = Topos('48.086873 N', '11.280641 E')
+ground8 = Topos('46.994580 N', '8.310018 E')
+ground9 = Topos('5.224441 N', '-52.776433 E')
+ground10 = Topos('36.065140 N', '140.127613 E')
 # creates a list of every minute for the next 24 hours
-minutes = range(60*24)
+m = 60
+hr = 24
+fl = "orbitLength.csv"
+with open(fl, 'w') as file:
+	file.write("len,\n")
+	file.write(str(m*hr))
+minutes = range(m*hr)
+fl = "satelliteData.csv"
 # creates a list of times for each minute of the above minutes list
 t = ts.utc(d.year, d.month, d.day, d.hour + (d.minute / 60), minutes)
 mountain = timezone('US/Mountain')
@@ -148,12 +168,39 @@ for craft in spacecraftNames:
 	lat = subpoint.latitude.degrees
 	long = subpoint.longitude.degrees
 	el = subpoint.elevation.km
+	
 	# calculates the positions of the spacecraft during the list of times in t
-	# to get an orbit
-	for i in groundSites:
-		orbit = (satellite - groundSites[i]).at(t)
-		alt, az, dist = orbit.altaz()
-		horizonData.append(np.array(alt.degrees > 0))
+    # to get an orbit
+	orbit = (satellite - ground).at(t)
+	orbit2 = (satellite - ground2).at(t)
+	orbit3 = (satellite - ground3).at(t)
+	orbit4 = (satellite - ground4).at(t)
+	orbit5 = (satellite - ground5).at(t)
+	orbit6 = (satellite - ground6).at(t)
+	orbit7 = (satellite - ground7).at(t)
+	orbit8 = (satellite - ground8).at(t)
+	orbit9 = (satellite - ground9).at(t)
+	orbit10 = (satellite - ground10).at(t)
+	alt, az, dist = orbit.altaz()
+	alt2, az2, dist2 = orbit2.altaz()
+	alt3, az3, dist3 = orbit3.altaz()
+	alt4, az4, dist4 = orbit4.altaz()
+	alt5, az5, dist5 = orbit5.altaz()
+	alt6, az6, dist6 = orbit6.altaz()
+	alt7, az7, dist7 = orbit7.altaz()
+	alt8, az8, dist8 = orbit8.altaz()
+	alt9, az9, dist9 = orbit9.altaz()
+	alt10, az10, dist10 = orbit10.altaz()
+	above_horizon1 = np.array(alt.degrees > 0)
+	above_horizon2 = np.array(alt2.degrees > 0)
+	above_horizon3 = np.array(alt3.degrees > 0)
+	above_horizon4 = np.array(alt4.degrees > 0)
+	above_horizon5 = np.array(alt5.degrees > 0)
+	above_horizon6 = np.array(alt6.degrees > 0)
+	above_horizon7 = np.array(alt7.degrees > 0)
+	above_horizon8 = np.array(alt8.degrees > 0)
+	above_horizon9 = np.array(alt9.degrees > 0)
+	above_horizon10 = np.array(alt10.degrees > 0)
 
 	# gets data about the spacecraft and its orbit and writes it to a csv file
 	with open(fl, 'a') as file:
@@ -164,8 +211,16 @@ for craft in spacecraftNames:
 			file.write(str(el[i]) + ',')
 			temp = str(t[i].utc)[1:-1]
 			file.write(temp + ',')
-			for j in range(len(groundSites)):
-				file.write(str(int(horizonData[j][i])) + ',')
-			file.write(',\n')
+			file.write(str(int(above_horizon1[i])) + ',')
+			file.write(str(int(above_horizon2[i])) + ',')
+			file.write(str(int(above_horizon3[i])) + ',')
+			file.write(str(int(above_horizon4[i])) + ',')
+			file.write(str(int(above_horizon5[i])) + ',')
+			file.write(str(int(above_horizon6[i])) + ',')
+			file.write(str(int(above_horizon7[i])) + ',')
+			file.write(str(int(above_horizon8[i])) + ',')
+			file.write(str(int(above_horizon9[i])) + ',')
+			file.write(str(int(above_horizon10[i])) + ',')
+			file.write('\n')
 	ending = datetime.now()
 	#print(alt, 'calculated in', ending - beginning, 'seconds')
