@@ -3,22 +3,8 @@ TODO:
 tab for instructions/explanation:
 	https://www.w3schools.com/howto/howto_js_tabs.asp
 	https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_tabs_fade
-
-show satellite current position, along with updated positions as time goes on
-// tween.js			https://gist.github.com/vincent/4ce2f9f37b1ac846f84c
-
-add/remove groundsites. For adding, I may be able to just hold the orbital data in
-python and just rerun the above_horizon on them based on the new groundsite information
-I guess I'll need to do this for removing as well, because I will need to keep the 
-above_horizon data for the other groundsites. I guess I could just create arrays for each
-groundsite and add a 1 if a spacecraft is above the horizon and a 0 if it isn't. I can then
-add the arrays together to a final array to send off to the javascript portion. That way,
-if I'm just removing one groundsite out of five, for example, it would just mean not adding
-the 1s from that groundsite's array to the final array. This could speed things up.
 */
 (function (window, document, undefined) {
-    //ensure strict mode
-    'use strict';
     var canvas;
     var scene, camera, renderer, controls, manager; // , stats;
     var windowW = window.innerWidth;
@@ -35,8 +21,12 @@ the 1s from that groundsite's array to the final array. This could speed things 
 	var numCraft;
 	var spacecraft = [];
 	var len;
+	var points = [];
+	var times = [];
+	var satTime;
 	var sites = [];
 	var satDict = {};
+	var satImg = {};
 	var rawSatData = []; //the array holding all the satellite data after parsing csv
 	
 	
@@ -94,6 +84,22 @@ the 1s from that groundsite's array to the final array. This could speed things 
 	}
 	document.querySelector('#listCraft').onkeyup = function (ev) {
 		ev.preventDefault();
+	}
+	
+	//the following function moves the satellites along the path in real time
+	function updateSat() {
+		var d = Date.now();
+		//the divisor variable is set to 3400 because we expect the whole thing to run at about 3400/60 = ~57 fps
+		var divisor = 3400;
+		//this gives us the index of the orbital point we are headed towards
+		var timeDiff = Math.floor((d-satTime)/60000);
+		for ( var i = 0; i < numCraft; i++) {
+			var satName = rawSatData[i*OL].name;
+			// updates the position of the satellite to be be an addition 1/3400 closer to the next orbital point
+			satImg[satName].position.x+= (satDict[satName].geometry.vertices[timeDiff].x - satImg[satName].position.x)/divisor;
+			satImg[satName].position.y+= (satDict[satName].geometry.vertices[timeDiff].y - satImg[satName].position.y)/divisor;
+			satImg[satName].position.z+= (satDict[satName].geometry.vertices[timeDiff].z - satImg[satName].position.z)/divisor;	
+		}
 	}
 	
 	function searchBox(k, boxes) {
@@ -167,10 +173,12 @@ the 1s from that groundsite's array to the final array. This could speed things 
 				if (check) {
 					checkboxes[i].checked = true;
 					satDict[checkboxes[i].name].visible = true;
+					satImg[checkboxes[i].name].visible = true;
 				}
 				else {
 					checkboxes[i].checked = false;
 					satDict[checkboxes[i].name].visible = false;
+					satImg[checkboxes[i].name].visible = false;
 				}
 			}
 			else {
@@ -199,11 +207,14 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		var allButton;
 		if (cl == 'spacecraftCheck') {
 			var sat = satDict[name];
+			var img = satImg[name];
 			if (check) {
 				sat.visible = true;
+				img.visible = true;
 			}
 			else {
 				sat.visible = false;
+				img.visible = false;
 			}
 			allButton = 'allCheck';
 		}
@@ -290,13 +301,14 @@ the 1s from that groundsite's array to the final array. This could speed things 
     //Three.OrbitControls setup procedure
     function setupControls() {
         controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.05;
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 0.03;
         controls.rotateSpeed = 0.2;
         controls.enableDamping = true;
         controls.dampingFactor = 0.3;
         controls.enablePan = false;
 		controls.minDistance = 20.5;
+		controls.maxDistance = 1200;
     }
 	
     //Create sphere geometry and put the earth outline image onto it
@@ -328,7 +340,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 			var x = -((r) * Math.sin(phi)*Math.cos(theta));
 			var y = ((r) * Math.cos(phi));
 			var z = ((r) * Math.sin(phi)*Math.sin(theta));
-			var geometry = new THREE.BoxGeometry(.03, .03, 2);
+			var geometry = new THREE.BoxGeometry(.04, .04, 3);
 			var material = new THREE.MeshBasicMaterial({color: 0xffff00});
 			var cube = new THREE.Mesh(geometry, material);
 			//creates an elongated yellow cube to show the location of the groundsite
@@ -349,13 +361,14 @@ the 1s from that groundsite's array to the final array. This could speed things 
 		//number of spacecraft to be shown
 		numCraft = rawSatData.length/OL;
 		var r, lat, lon, x, y, z;
-		
+		var timeDiff;
 		for (var i = 0; i < numCraft; i++) {
+			points.push([]);
 			var material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
 			var geometry = new THREE.Geometry();
 			var satName = rawSatData[i*OL].name;
 			var prev = 0;
-			for (var j = 0; j < OL - 1; j++) {
+			for (var j = 0; j < OL; j++) {
 				var current = 0;
 				if (rawSatData[i*OL+j].second > 30) {
 				rawSatData[i*OL+j].second = 0;
@@ -363,6 +376,23 @@ the 1s from that groundsite's array to the final array. This could speed things 
 				}
 				else {
 					rawSatData[i*OL+j].second = 0;
+				}
+				
+				// I don't know why you have to subtract a month off, but you do in order to get the
+				//correct date. You also need to subtract 6 hours in order to get the correct UTC time
+				var d = new Date(rawSatData[i*OL+j].year, rawSatData[i*OL+j].month - 1, 
+				rawSatData[i*OL+j].day, rawSatData[i*OL+j].hour - 6, rawSatData[i*OL+j].minute);
+				d = d.getTime();
+				//adds the date to a list of dates for each orbital point in the 24 hour period calculated byte
+				//the python side of the program
+				times.push(d);
+				
+				//this just grabs the first element of the time array and spits out timeDiff, which
+				// is the index of the next orbital point from where we currently are
+				if (i == 0 && j == 0) {
+					satTime = times[0];
+					var d = Date.now();
+					timeDiff = Math.floor((d-satTime)/60000);
 				}
 
 				r = ((rawSatData[i*OL+j].elevation+6378)*10/6378);
@@ -375,15 +405,61 @@ the 1s from that groundsite's array to the final array. This could speed things 
 				z = ((r) * Math.sin(phi)*Math.sin(theta));
 				y = ((r) * Math.cos(phi));
 				
+				var vert = new THREE.Vector3(x, y, z);
+				points[i].push(vert);
+				
 				geometry.colors[j] = new THREE.Color(0x0000ff);
-				geometry.vertices.push(new THREE.Vector3(x, y, z));
+				geometry.vertices.push(vert);
 				prev = current;
+				
+				if (j == timeDiff - 1) {
+					//this adds the satellite sprites at the location on each path where the satellite
+					//should be in real time. I kind of manually moved the location by subtracting 1 from
+					// the timeDiff index, as that seemed to correctly place the satellite sprite.
+					if (satName == "ISS (ZARYA)") {
+						var spriteMap = new THREE.TextureLoader().load( 'img/iss1.png' );
+						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
+						var sprite = new THREE.Sprite( spriteMaterial);
+						sprite.scale.set(1.1, 1.1, 1);
+						sprite.position.set(x, y, z);
+						scene.add( sprite );
+						sprite.visible = false;
+					}
+					else {
+						// I was going to have some fun and have each satellite image randomly selected to 
+						//give some variety, but I commented out the code so it just uses the sat3.png image
+						//var img =  Math.floor(Math.random() * 3) + 1;
+						//var imgLoc = 'img/sat' + img + '.png'
+						var spriteMap = new THREE.TextureLoader().load( /*imgLoc*/ 'img/sat3.png' );
+						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff} );
+						var sprite = new THREE.Sprite( spriteMaterial );
+						var imgScale = r/12;
+						if (imgScale > 10) {
+							imgScale = 10;
+						}
+						
+						// the sprite is scaled accordingly to how far away it is from the earth.
+						//This just makes it easier to see. It is also not updated as the satellite
+						//moves, as I haven't decided whether that would be beneficial yet.
+						sprite.scale.set(imgScale, imgScale, 1);
+						sprite.position.set(x, y, z);
+						scene.add( sprite );
+						sprite.visible = false;
+					}
+					//adds the sprite to a dictionary for ease of use later
+					satImg[satName] = sprite;
+				}
 			}
+			// creates the line using the orbital points we gave it and adds the line to the scene.
+			// the line is not visible when the app first starts.
 			var line = new THREE.Line( geometry, material );
 			line.name = satName;
 			scene.add(line);
 			line.visible = false;
+			// adds the line to a dictionary for easy access later
 			satDict[satName] = line;
+			//spacecraft is a list of spacecraft names that makes it easier to set up the checkboxes
+			//and their functionality
 			spacecraft.push(satName);
 		}
 	}
@@ -408,7 +484,9 @@ the 1s from that groundsite's array to the final array. This could speed things 
     function checkForRaycasts() {
         raycaster.setFromCamera(mouse, camera);
         for (var i = 1; i < scene.children.length; i++) {
-            scene.children[i].material.opacity = 0.5;
+			if (scene.children[i].type == "Line") {
+				scene.children[i].material.opacity = 0.4;
+			} 
         }
         //calculate objects intersecting the picking ray
         var intersects = raycaster.intersectObjects(scene.children);
@@ -423,6 +501,7 @@ the 1s from that groundsite's array to the final array. This could speed things 
 	
     function render() {
         requestAnimationFrame(render);
+		updateSat();
         controls.update();
         if (mouse.x < sceneW) {
             checkForRaycasts();

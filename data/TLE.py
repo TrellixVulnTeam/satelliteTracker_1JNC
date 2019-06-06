@@ -23,11 +23,11 @@ satellite = satellites['ISS (ZARYA)']"""
 
 spacecraftNames = []  # list of spacecraft keys to get TLE values
 IDs = [11, 20, 22, 29, 46, 19822, 20580, 22049, 23191, 23439, 23560, 23715, 25492, 25544, 25989, 25994, 
-27424, 27540, 27600, 27607, 30580, 30797, 31135, 32781, 33401, 33591, 33752, 36827, 37755, 37790, 37818, 
+27424, 27540, 27600, 27607, 30580, 30797, 31135, 32275, 32781, 33401, 33591, 33752, 36827, 37755, 37790, 37818, 
 38771, 39026, 39034, 39075, 39084, 39088, 39444, 39768, 40019, 40069, 40296, 40482, 40719, 40878, 40889, 
 41019, 41032, 41332, 41765, 41783, 41834, 41875, 42711, 42722, 42726, 42808, 42959, 42982, 43020, 43021, 
 43115, 43231, 43437, 43466, 43468, 43472, 43539, 43546, 43547, 43548, 43549, 43550, 43552, 43556, 43557, 
-43558, 43559, 43560, 43561, 43565, 43566, 43567, 43595, 43596, 43638, 43707, 43935, 44030, 44031, 44032, 
+43558, 43559, 43560, 43565, 43566, 43567, 43595, 43596, 43638, 43707, 43935, 44030, 44031, 44032, 
 44033, 44045, 44057, 44062, 44109, 44229, 44231, 44235, 44259]
 
 groundSites = {"NASA HQ (D.C.)": Topos('38.883056 N', '-77.017369 E'), "NASA Mission Control Center": Topos('29.557857 N', '-95.089023 E'),
@@ -36,6 +36,11 @@ groundSites = {"NASA HQ (D.C.)": Topos('38.883056 N', '-77.017369 E'), "NASA Mis
 "German Space Operation Center": Topos('48.086873 N', '11.280641 E'), "BIOTESC (Zurich)": Topos('46.994580 N', '8.310018 E'),
 "Guiana Space Center": Topos('5.224441 N', '-52.776433 E'), "Tsukuba Space Center (Japan)": Topos('36.065140 N', '140.127613 E')}
 horizonData = []
+
+# TODO: add a < while True: > loop to the program that checks for the times when the satellite data
+#be updated. It will need to check right after we pass hour = 0, minute = 7 and second = 36 to grab
+#all new data from space-track, and then again when hour = 12, minute = 7 and second = 36 to
+#recalculate a 24 hour orbit prediction with the data already grabbed from space-track
 
 timeNow = datetime.now()
 fl = 'time.txt'
@@ -127,7 +132,7 @@ with open(fl, 'a') as file:
 	file.write('h7,')
 	file.write('h8,')
 	file.write('h9,')
-	file.write('h10,')
+	file.write('h10,\n')
 ts = load.timescale()
 
 ground = Topos('38.883056 N', '-77.017369 E')
