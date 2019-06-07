@@ -33,8 +33,13 @@ IDs = [11, 20, 22, 29, 46, 19822, 20580, 22049, 23191, 23439, 23560, 23715, 2549
 groundSites = {"NASA HQ (D.C.)": Topos('38.883056 N', '-77.017369 E'), "NASA Mission Control Center": Topos('29.557857 N', '-95.089023 E'),
 "Kennedy Space Center": Topos('28.579680 N', '-80.653010 E'), "Moscow Mission Control Center": Topos('55.912104 N', '37.810254 E'),
 "Baikonur Cosmodrome (Kazakhstan)": Topos('45.963929 N', '63.305125 E'), "Canadian Space Center": Topos('45.521186 N', '-73.393632 E'),
-"German Space Operation Center": Topos('48.086873 N', '11.280641 E'), "BIOTESC (Zurich)": Topos('46.994580 N', '8.310018 E'),
-"Guiana Space Center": Topos('5.224441 N', '-52.776433 E'), "Tsukuba Space Center (Japan)": Topos('36.065140 N', '140.127613 E')}
+"German Space Operation Center": Topos('48.086873 N', '11.280641 E'), "South Point Satellite Station (Hawai'i)": Topos('18.913628 N', '-155.682263 E'),
+"Guiana Space Center": Topos('5.224441 N', '-52.776433 E'), "Tsukuba Space Center (Japan)": Topos('36.065140 N', '140.127613 E'),
+"Troll Satellite Station (Antarctica)": Topos('-72.002914 N', '2.525675 E'), 
+"Canberra Deep Space Complex (Australia)": Topos('-35.401565 N', '148.981433 E'), 
+"KSAT Hartebeesthoek (South Africa)": Topos('-25.890233 N', '27.685390 E'),
+"North Pole Satellite Station (Alaska)": Topos('64.753870 N', '-147.345851 E'),
+"Master Control Facility (India)": Topos('13.071199 N', '76.099593 E')}
 horizonData = []
 
 # TODO: add a < while True: > loop to the program that checks for the times when the satellite data
@@ -132,7 +137,12 @@ with open(fl, 'a') as file:
 	file.write('h7,')
 	file.write('h8,')
 	file.write('h9,')
-	file.write('h10,\n')
+	file.write('h10,')
+	file.write('h11,')
+	file.write('h12,')
+	file.write('h13,')
+	file.write('h14,')
+	file.write('h15,\n')
 ts = load.timescale()
 
 ground = Topos('38.883056 N', '-77.017369 E')
@@ -145,6 +155,11 @@ ground7 = Topos('48.086873 N', '11.280641 E')
 ground8 = Topos('46.994580 N', '8.310018 E')
 ground9 = Topos('5.224441 N', '-52.776433 E')
 ground10 = Topos('36.065140 N', '140.127613 E')
+ground11 = Topos('-72.002914 N', '2.525675 E')
+ground12 = Topos('-35.401565 N', '148.981433 E')
+ground13 = Topos('-25.890233 N', '27.685390 E')
+ground14 = Topos('64.8 N', '147.65 E')
+ground15 = Topos('13.071199 N', '76.099593 E')
 # creates a list of every minute for the next 24 hours
 m = 60
 hr = 24
@@ -186,6 +201,11 @@ for craft in spacecraftNames:
 	orbit8 = (satellite - ground8).at(t)
 	orbit9 = (satellite - ground9).at(t)
 	orbit10 = (satellite - ground10).at(t)
+	orbit11 = (satellite - ground11).at(t)
+	orbit12 = (satellite - ground12).at(t)
+	orbit13 = (satellite - ground13).at(t)
+	orbit14 = (satellite - ground14).at(t)
+	orbit15 = (satellite - ground15).at(t)
 	alt, az, dist = orbit.altaz()
 	alt2, az2, dist2 = orbit2.altaz()
 	alt3, az3, dist3 = orbit3.altaz()
@@ -196,6 +216,11 @@ for craft in spacecraftNames:
 	alt8, az8, dist8 = orbit8.altaz()
 	alt9, az9, dist9 = orbit9.altaz()
 	alt10, az10, dist10 = orbit10.altaz()
+	alt11, az11, dist11 = orbit11.altaz()
+	alt12, az12, dist12 = orbit12.altaz()
+	alt13, az13, dist13 = orbit13.altaz()
+	alt14, az14, dist14 = orbit14.altaz()
+	alt15, az15, dist15 = orbit15.altaz()
 	above_horizon1 = np.array(alt.degrees > 0)
 	above_horizon2 = np.array(alt2.degrees > 0)
 	above_horizon3 = np.array(alt3.degrees > 0)
@@ -206,6 +231,11 @@ for craft in spacecraftNames:
 	above_horizon8 = np.array(alt8.degrees > 0)
 	above_horizon9 = np.array(alt9.degrees > 0)
 	above_horizon10 = np.array(alt10.degrees > 0)
+	above_horizon11 = np.array(alt11.degrees > 0)
+	above_horizon12 = np.array(alt12.degrees > 0)
+	above_horizon13 = np.array(alt13.degrees > 0)
+	above_horizon14 = np.array(alt14.degrees > 0)
+	above_horizon15 = np.array(alt15.degrees > 0)
 
 	# gets data about the spacecraft and its orbit and writes it to a csv file
 	with open(fl, 'a') as file:
@@ -226,6 +256,11 @@ for craft in spacecraftNames:
 			file.write(str(int(above_horizon8[i])) + ',')
 			file.write(str(int(above_horizon9[i])) + ',')
 			file.write(str(int(above_horizon10[i])) + ',')
+			file.write(str(int(above_horizon11[i])) + ',')
+			file.write(str(int(above_horizon12[i])) + ',')
+			file.write(str(int(above_horizon13[i])) + ',')
+			file.write(str(int(above_horizon14[i])) + ',')
+			file.write(str(int(above_horizon15[i])) + ',')
 			file.write('\n')
 	ending = datetime.now()
 	#print(alt, 'calculated in', ending - beginning, 'seconds')

@@ -212,6 +212,33 @@ path:hover {
   }
 }
 
+.accordion {
+  background-color: #eee;
+  color: #444;
+  cursor: pointer;
+  padding: 18px;
+  width: 15%;
+  position: absolute; 
+  right: 0;
+  border: none;
+  text-align: center;
+  outline: none;
+  font-size: 15px;
+  transition: .4s;
+}
+
+.active, .accordion:hover {
+  background-color: #ccc;
+}
+
+.panel {
+  padding: 0 18px;
+  background-color: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+}
+
 .loaded #loading-text {
 	opacity: 0;
 	-webkit-transition: all 0.5s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */

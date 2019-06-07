@@ -15,20 +15,31 @@ tab for instructions/explanation:
     raycaster.linePrecision = 0.1;
 	
     var mouse = new THREE.Vector2();
-    var parseDate = d3.time.format("%m/%d/%Y").parse;
-    var groundSites = {};
 	var OL;
 	var numCraft;
-	var spacecraft = [];
 	var len;
+	var rawSatData = []; //the array holding all the satellite data after parsing csv
+	var spacecraft = [];
 	var points = [];
 	var times = [];
 	var satTime;
 	var sites = [];
 	var satDict = {};
 	var satImg = {};
-	var rawSatData = []; //the array holding all the satellite data after parsing csv
+	var groundSites = {};
 	
+	//https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_accordion_animate
+	document.getElementById('about').onclick = function (ev) {
+		console.log(ev.target.id);
+		this.classList.toggle("active");
+		var panel = this.nextElementSibling;
+		if (panel.style.maxHeight){
+		  panel.style.maxHeight = null;
+		} else {
+		  panel.style.maxHeight = panel.scrollHeight + "px";
+		} 
+	}
+
 	
     function onMouseMove(event) {
         // calculate mouse position in normalized device coordinates
@@ -38,6 +49,19 @@ tab for instructions/explanation:
     }
 
 	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener('mousemove', onMouseMove, false);
+	document.addEventListener('visibilitychange', function () {
+	  if (!document.hidden) {
+		  var d = Date.now();
+			var timeDiff = Math.floor((d-satTime)/60000);
+			for ( var i = 0; i < numCraft; i++) {
+				var satName = rawSatData[i*OL].name;
+				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff-1].x;
+				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
+				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;	
+			}
+		}
+	}, false)
 	
 	function openSideBar() {
 		setTimeout(function(){
@@ -145,6 +169,21 @@ tab for instructions/explanation:
 				}
 				if (searchBox(9, checkboxes)) {
 					current += rawSatData[i*OL+j].h10;
+				}
+				if (searchBox(10, checkboxes)) {
+					current += rawSatData[i*OL+j].h11;
+				}
+				if (searchBox(11, checkboxes)) {
+					current += rawSatData[i*OL+j].h12;
+				}
+				if (searchBox(12, checkboxes)) {
+					current += rawSatData[i*OL+j].h13;
+				}
+				if (searchBox(13, checkboxes)) {
+					current += rawSatData[i*OL+j].h14;
+				}
+				if (searchBox(14, checkboxes)) {
+					current += rawSatData[i*OL+j].h15;
 				}
 				
 				if (current > 0 && prev == 0) {
@@ -302,7 +341,7 @@ tab for instructions/explanation:
     function setupControls() {
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.autoRotate = false;
-        controls.autoRotateSpeed = 0.03;
+        controls.autoRotateSpeed = 0.04;
         controls.rotateSpeed = 0.2;
         controls.enableDamping = true;
         controls.dampingFactor = 0.3;
@@ -381,7 +420,7 @@ tab for instructions/explanation:
 				// I don't know why you have to subtract a month off, but you do in order to get the
 				//correct date. You also need to subtract 6 hours in order to get the correct UTC time
 				var d = new Date(rawSatData[i*OL+j].year, rawSatData[i*OL+j].month - 1, 
-				rawSatData[i*OL+j].day, rawSatData[i*OL+j].hour - 6, rawSatData[i*OL+j].minute);
+				rawSatData[i*OL+j].day, rawSatData[i*OL+j].hour - 6, rawSatData[i*OL+j].minute - 1);
 				d = d.getTime();
 				//adds the date to a list of dates for each orbital point in the 24 hour period calculated byte
 				//the python side of the program
@@ -420,7 +459,7 @@ tab for instructions/explanation:
 						var spriteMap = new THREE.TextureLoader().load( 'img/iss1.png' );
 						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
 						var sprite = new THREE.Sprite( spriteMaterial);
-						sprite.scale.set(1.1, 1.1, 1);
+						sprite.scale.set(1, 1, 1);
 						sprite.position.set(x, y, z);
 						scene.add( sprite );
 						sprite.visible = false;
@@ -446,6 +485,7 @@ tab for instructions/explanation:
 						scene.add( sprite );
 						sprite.visible = false;
 					}
+					sprite.name = satName;
 					//adds the sprite to a dictionary for ease of use later
 					satImg[satName] = sprite;
 				}
@@ -480,21 +520,23 @@ tab for instructions/explanation:
 		gsList();
 		craftList();
     }
-
+	
     function checkForRaycasts() {
         raycaster.setFromCamera(mouse, camera);
         for (var i = 1; i < scene.children.length; i++) {
 			if (scene.children[i].type == "Line") {
 				scene.children[i].material.opacity = 0.4;
-			} 
+			}
         }
         //calculate objects intersecting the picking ray
         var intersects = raycaster.intersectObjects(scene.children);
         //only first intersect
         if (intersects.length != 0) {
-            if (print) print = false;
             if (intersects[0].object.type == "Line") {
                 intersects[0].object.material.opacity = 1.0;
+            }
+			else if (intersects[0].object.type == "Sprite") {
+                console.log(intersects[0].object.name);
             }
         }
     }
@@ -550,7 +592,12 @@ tab for instructions/explanation:
 			h7: +d.h7,
 			h8: +d.h8,
 			h9: +d.h9,
-			h10: +d.h10
+			h10: +d.h10,
+			h11: +d.h11,
+			h12: +d.h12,
+			h13: +d.h13,
+			h14: +d.h14,
+			h15: +d.h15
         };
     }, function (data) {
         rawSatData = data.slice(); //copy
