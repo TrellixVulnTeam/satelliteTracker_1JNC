@@ -4,10 +4,6 @@
     <meta charset=utf-8>
     <title>Satellite Tracker</title>
 	<link rel="shortcut icon" href="img/burnearth.ico" type="image/x-icon">
-    <style>
-      body {margin: 0;}
-      canvas { width: 100%; height: 100% }
-    </style>
     <link rel="stylesheet" type="text/css" href="style.css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
   </head>
@@ -17,9 +13,48 @@
     <script src="scripts/d3.js"></script>
     <script src="scripts/OrbitControls.js"></script>
     <script src="scripts/script.js" type="text/javascript" charset="utf-8" async defer></script>
-	
-	  <button class="accordion" id = "about">About</button>
-	
+	<div class="menu" id="menu">
+		<input type="checkbox" id="check" style="opacity: 0;">
+		<label for="check" class="button" id="about">
+			<span></span>
+			<span></span>
+			<span></span>
+		</label>
+		<nav>
+			<p class="thick">About The Satellite Tracker</p>
+			<!--<p><span class="tab">Space Bar: <span class="tab">Start/Stop Planet Rotation</span></span></p>-->
+			<p>Controls:</p>
+			<p><span class="tab">Click and Drag to Move the Globe Around</span></p>
+			<p><span class="tab">Press Space Bar to Start/Stop Planet Rotation</span></p>
+			<p><span class="tab">Click on a Satellite or GroundSite to Turn the Element on or off</span></p>
+			<p>This project is an experiment in trying to track satellites across the sky, and show 
+			where they are visible to different points on the earth. The path shown for each satellite 
+			is a 24 hour period calculated from TLE (Two Line Element) data gathered from 
+			space-track.org.</p>
+			<p>Some of the orbits will look a little crazy, as I'm not showing a traditional ellipse
+			of a satellite's path. I've verified the satellite orbits this project shows with n2yo.com,
+			and the data matches up.</p>
+			
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore 
+			et dolore magna aliqua. Enim praesent elementum facilisis leo vel fringilla est. Ullamcorper morbi 
+			tincidunt ornare massa eget. Ut tortor pretium viverra suspendisse potenti nullam ac tortor. 
+			In nisl nisi scelerisque eu ultrices vitae auctor eu. Aliquet risus feugiat in ante metus dictum. Mi 
+			tempus imperdiet nulla malesuada pellentesque elit. Urna et pharetra pharetra massa massa ultricies 
+			mi quis hendrerit. Pulvinar etiam non quam lacus suspendisse faucibus interdum. Euismod in 
+			pellentesque massa placerat duis ultricies lacus sed turpis. Iaculis at erat pellentesque adipiscing. 
+			Malesuada fames ac turpis egestas integer. Tincidunt eget nullam non nisi. Orci phasellus egestas 
+			tellus rutrum tellus. Tortor consequat id porta nibh venenatis. Sed euismod nisi porta lorem mollis 
+			aliquam ut porttitor. Enim tortor at auctor urna nunc id cursus metus aliquam. Et leo duis ut diam 
+			quam nulla porttitor massa id. Enim blandit volutpat maecenas volutpat blandit aliquam etiam. Eget 
+			nulla facilisi etiam dignissim diam quis enim. Elit pellentesque habitant morbi tristique. Enim ut 
+			sem viverra aliquet. Odio aenean sed adipiscing diam donec adipiscing tristique risus nec. Potenti 
+			nullam ac tortor vitae. Id ornare arcu odio ut sem nulla pharetra. Scelerisque in dictum non 
+			consectetur. In nibh mauris cursus mattis molestie a iaculis at erat. Gravida arcu ac tortor 
+			dignissim convallis. Tincidunt tortor aliquam nulla facilisi.
+			<hr>
+		</nav>
+	</div>	
+
 	<div class="sidenav topTitle" id="gsTitle">
 		<p><h1>GroundSites</h1></p>
 		<label>All<input type="checkbox" id="gsAll"></label>
@@ -36,10 +71,10 @@
 	<div class="sidenav bottomContent" id = "craftnav">
 		<div id = "listCraft"></div>
 	</div>
+	<script>document.getElementById("about").style.opacity = "0";</script>
 	<div id="loading-wrapper">
 		<div id="loading-text">LOADING</div>
 		<div id="loading-content"></div>
 	</div>
-	<div id="tooltip"></div>
   </body>
 </html>

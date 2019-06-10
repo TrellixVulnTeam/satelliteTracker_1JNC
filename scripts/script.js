@@ -28,19 +28,6 @@ tab for instructions/explanation:
 	var satImg = {};
 	var groundSites = {};
 	
-	//https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_accordion_animate
-	document.getElementById('about').onclick = function (ev) {
-		console.log(ev.target.id);
-		this.classList.toggle("active");
-		var panel = this.nextElementSibling;
-		if (panel.style.maxHeight){
-		  panel.style.maxHeight = null;
-		} else {
-		  panel.style.maxHeight = panel.scrollHeight + "px";
-		} 
-	}
-
-	
     function onMouseMove(event) {
         // calculate mouse position in normalized device coordinates
         // (-1 to +1) for both components
@@ -70,21 +57,25 @@ tab for instructions/explanation:
 		document.getElementById("gsTitle").style.top = "0%";
 		document.getElementById("gsTitle").visible = true;
 		document.getElementById("gsnav").style.width = "20%";
-		document.getElementById("gsnav").style.height = "20%"
-		document.getElementById("gsnav").style.top = "17%";
+		document.getElementById("gsnav").style.height = "22%"
+		document.getElementById("gsnav").style.top = "14%";
 		document.getElementById("gsnav").visible = true;
 		document.getElementById("spacecraftTitle").style.width = "20%";
 		document.getElementById("spacecraftTitle").style.height = "20%"
 		document.getElementById("spacecraftTitle").style.top = "37%";
 		document.getElementById("spacecraftTitle").visible = true;
 		document.getElementById("craftnav").style.width = "20%";
-		document.getElementById("craftnav").style.height = "46%";
-		document.getElementById("craftnav").style.top = "54%";
+		document.getElementById("craftnav").style.height = "49%";
+		document.getElementById("craftnav").style.top = "51%";
 		document.getElementById("craftnav").visible = true;
 		}, 500);
+		setTimeout(function() {
+			document.getElementById("check").checked = true;
+			document.getElementById("about").style.opacity = "1";
+		}, 1400);
 		$('body').addClass('loaded');
 	}
-		
+
 	document.querySelector('#gsAll').onclick = function (ev) {
 		checkAll(ev.target.checked, 'gsCheck');
 	}
@@ -122,7 +113,12 @@ tab for instructions/explanation:
 			// updates the position of the satellite to be be an addition 1/3400 closer to the next orbital point
 			satImg[satName].position.x+= (satDict[satName].geometry.vertices[timeDiff].x - satImg[satName].position.x)/divisor;
 			satImg[satName].position.y+= (satDict[satName].geometry.vertices[timeDiff].y - satImg[satName].position.y)/divisor;
-			satImg[satName].position.z+= (satDict[satName].geometry.vertices[timeDiff].z - satImg[satName].position.z)/divisor;	
+			satImg[satName].position.z+= (satDict[satName].geometry.vertices[timeDiff].z - satImg[satName].position.z)/divisor;
+			if (satName != "ISS ZARYA") {
+				var r = ((rawSatData[i*OL].elevation+6378)*10/6378)/12;
+				if (r > 10) r = 10;
+				satImg[satName].scale = (r, r, 1);
+			}
 		}
 	}
 	
@@ -347,7 +343,7 @@ tab for instructions/explanation:
         controls.dampingFactor = 0.3;
         controls.enablePan = false;
 		controls.minDistance = 20.5;
-		controls.maxDistance = 1200;
+		controls.maxDistance = 1000;
     }
 	
     //Create sphere geometry and put the earth outline image onto it
@@ -477,9 +473,9 @@ tab for instructions/explanation:
 							imgScale = 10;
 						}
 						
-						// the sprite is scaled accordingly to how far away it is from the earth.
-						//This just makes it easier to see. It is also not updated as the satellite
-						//moves, as I haven't decided whether that would be beneficial yet.
+						//the sprite is scaled accordingly to how far away it is from the earth.
+						//This just makes it easier to see. It should update position and scale 
+						//in the updateSat() function
 						sprite.scale.set(imgScale, imgScale, 1);
 						sprite.position.set(x, y, z);
 						scene.add( sprite );

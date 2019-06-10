@@ -1,18 +1,22 @@
 * {
 	font-family: Bookman;
 	box-sizing:border-box;
-	overflow-x: hidden;
 }
 
 body {
 	background-color: #000;
+	overflow-y: hidden;
+	margin: 0;
 }
 
 
 canvas {
 	position:absolute;
+	width: 100%;
+	height: 100%
 }
 
+/* the sidenave holds all of the buttons to display spacecraft and ground sites*/
 .sidenav {
   width: 0%;
   position: fixed;
@@ -38,18 +42,18 @@ canvas {
 }
 
 .sidenav .topContent {
-	top: 10%
-	height: 20%;
+	top: 14%
+	height: 22%;
 }
 
 .sidenav .bottomTitle {
-	top: 30%
+	top: 37%
 	height: 20%;
 }
 
 .sidenav .bottomContent {
-	top: 47%
-	height: 53%;
+	top: 51%
+	height: 49%;
 }
 
 ::-webkit-scrollbar {
@@ -61,7 +65,7 @@ input {
     outline: 0; /*for firefox*/
 }
 
-label {
+.sidenav label {
   display: block;
   padding-left: 10%;
   padding-bottom: 0;
@@ -72,7 +76,7 @@ label {
   overflow: hidden;
 }
 
-input {
+.sidenav input {
   width: 18px;
   height: 18px;
   position: relative;
@@ -80,7 +84,7 @@ input {
   
 }
 
-hr {
+.sidenave hr {
        display: block;
        position: relative;
        padding: 0;
@@ -92,17 +96,18 @@ hr {
        line-height: 0;
        clear: both;
 }
-
+/* end of sidenav elements */
 
 path:hover {
 	fill-opacity: 1;
 }
 
-.tags {
-	position:absolute;
-	left: 20px;
-	bottom:40px;
+.tab { 
+       display:inline-block; 
+       margin-left: 20px; 
 }
+
+/* loading screen elements*/
 
 #loading-wrapper {
   position: fixed;
@@ -211,34 +216,9 @@ path:hover {
     transform: rotate(360deg);
   }
 }
+/*end loading screen elements*/
 
-.accordion {
-  background-color: #eee;
-  color: #444;
-  cursor: pointer;
-  padding: 18px;
-  width: 15%;
-  position: absolute; 
-  right: 0;
-  border: none;
-  text-align: center;
-  outline: none;
-  font-size: 15px;
-  transition: .4s;
-}
-
-.active, .accordion:hover {
-  background-color: #ccc;
-}
-
-.panel {
-  padding: 0 18px;
-  background-color: white;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.2s ease-out;
-}
-
+/*loaded class to make the loading screen disappear*/
 .loaded #loading-text {
 	opacity: 0;
 	-webkit-transition: all 0.5s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
@@ -256,3 +236,128 @@ path:hover {
 	-webkit-transition: all 0.5s ease-out;  /* Android 2.1+, Chrome 1-25, iOS 3.2-6.1, Safari 3.2-6  */
           transition: all 0.5s ease-out;  /* Chrome 26, Firefox 16+, iOS 7+, IE 10+, Opera, Safari 6.1+  */
 }
+/*end loading screen elements*/
+
+
+
+/* drop down button elements. Source: https://codepen.io/fabran99/pen/rReeJE*/
+.menu{
+    text-align: right;
+    position: fixed;
+    width: 20%;
+    z-index: 200;
+    right: 0;
+	margin: 0;
+	padding: 0;
+}
+
+#check{
+	/* hide the checkbox because only the label is needed*/
+    display: none;
+}
+
+.button{
+    width: 48px;
+    height: 48px;
+    background: #00BFFF;
+    padding: 12px;
+    display: inline-block;
+    transition: all 0.2s ease-in;
+    padding-top: 8px;
+    line-height: 8px;
+    text-align: left;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 201;
+}
+.button:hover{
+    background: #0099cc;
+}
+.button span{
+    height: 3px;
+    width: 100%;
+    background: white;
+    display: inline-block;
+    transition: all 0.5s cubic-bezier(.62,.43,.35,1.47);
+}
+
+#check:checked ~ .button {
+	border-radius: 0px 10px 0px 0px;
+}
+
+/* toggle icon animation */
+#check:checked ~ .button span:nth-child(1){
+    width: 100%;
+    transform: rotate(45deg) translateY(6px) translateX(6px);
+}
+#check:checked ~ .button span:nth-child(2){
+    width: 0;
+}
+
+#check:checked ~ .button span:nth-child(3){
+    width: 100%;
+    transform: rotate(-45deg) translateY(-7px) translateX(7px);
+}
+
+nav{
+    text-align: left;
+    overflow: hidden;
+    transition: all 0.5s ease;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    height: 0;
+	overflow-y: scroll;
+	padding-right: 39px;
+}
+nav p{
+    text-decoration: none;
+    color: 	#696969;
+    display: block;
+    font-size: 16px;
+    transition: all 0.5s cubic-bezier(.22,.43,.35,1.5);
+    opacity: 0;
+    transform: scale(0);
+    transform-origin: top;
+	overflow-wrap: break-word;
+}
+
+nav p.thick {
+	font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  padding-right: 39px;
+}
+
+nav hr {
+       display: block;
+       position: relative;
+       padding: 0;
+       margin: 20px;
+       height: 0;
+       width: 89%;
+       font-size: 3px;
+       line-height: 0;
+       clear: both;
+	   background-color: black;
+	   border: 1px solid black;
+}
+
+/* the nav height will be set to the height in pixels that would have for default, 
+using height:auto won't work but you can put that value in pixels creating the slide*/
+#check:checked ~ nav{
+    height: 250px;
+	border-bottom: 10px solid white;
+	border-radius: 10px 10px 10px 10px;
+}
+
+#check:checked ~ nav p{
+    padding-right: 10px;
+	padding-left: 10px;
+    opacity: 1;
+    transform: scale(1);
+}
+/*end drop down elements*/

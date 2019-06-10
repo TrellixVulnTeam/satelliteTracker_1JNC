@@ -47,6 +47,13 @@ horizonData = []
 #all new data from space-track, and then again when hour = 12, minute = 7 and second = 36 to
 #recalculate a 24 hour orbit prediction with the data already grabbed from space-track
 
+#potential help to speed up calculations: 
+#https://github.com/skyfielders/python-skyfield/issues/30
+#https://pyorbital.readthedocs.io/en/latest/
+#https://github.com/skyfielders/python-skyfield/issues/188
+#https://programmingforresearch.wordpress.com/2012/10/30/using-pyephem-to-get-the-ground-coordinates-of-a-satellite/
+#https://www.reddit.com/r/Python/comments/9pl4bc/using_python_pyephem_and_opencv_to_track/
+
 timeNow = datetime.now()
 fl = 'time.txt'
 with open(fl, 'r') as file:
@@ -158,7 +165,7 @@ ground10 = Topos('36.065140 N', '140.127613 E')
 ground11 = Topos('-72.002914 N', '2.525675 E')
 ground12 = Topos('-35.401565 N', '148.981433 E')
 ground13 = Topos('-25.890233 N', '27.685390 E')
-ground14 = Topos('64.8 N', '147.65 E')
+ground14 = Topos('64.8 N', '-147.65 E')
 ground15 = Topos('13.071199 N', '76.099593 E')
 # creates a list of every minute for the next 24 hours
 m = 60

@@ -1,7 +1,7 @@
 Welcome to my satellite tracker project!
 
 This project tracks 100 different satellites in their orbits around the earth,
-with 10 groundsites on the earth's surface.
+with 15 groundsites on the earth's surface.
 
 The point of the project is to visualize satellite paths in 3D, while also
 showing where those paths are visible to different points on the earth.
@@ -32,7 +32,6 @@ side will grab new data from space-track.org once every 24 hours, and will
 recalculate orbital data again 12 hours later using the data it already has from
 space-track.org.
 
-I have some additional UI features planned, such as adding a graphic of a satellite
-at a given satellite's real-time position, as well as the ability to hover over a
+I have some additional UI features planned, such as the ability to hover over a
 satellite path and have a tag pop up, showing the time that the spacecraft will
 pass through that point.
