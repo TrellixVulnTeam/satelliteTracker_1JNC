@@ -13,10 +13,13 @@ import json
 from datetime import datetime, timedelta
 from pytz import timezone
 
+# TODO: add a < while True: > loop to the program that checks for the times when the satellite data
+#be updated. It will need to check right after we pass hour = 0, minute = 7 and second = 36 to grab
+#all new data from space-track, and then again when hour = 12, minute = 7 and second = 36 to
+#recalculate a 24 hour orbit prediction with the data already grabbed from space-track
 
 
-
-# get TLE information from CelesTrakstations_url = 'http://celestrak.com/NORAD/elements/stations.txt'
+# get TLE information from CelesTrak stations_url = 'http://celestrak.com/NORAD/elements/stations.txt'
 """satellites = load.tle(stations_url)
 # for the following line, ISS, ZARYA, or ISS (ZARYA) can be used. Some spacecraft have multiple keys (names) that can be used
 satellite = satellites['ISS (ZARYA)']"""
@@ -30,7 +33,8 @@ IDs = [11, 20, 22, 29, 46, 19822, 20580, 22049, 23191, 23439, 23560, 23715, 2549
 43558, 43559, 43560, 43565, 43566, 43567, 43595, 43596, 43638, 43707, 43935, 44030, 44031, 44032, 
 44033, 44045, 44057, 44062, 44109, 44229, 44231, 44235, 44259]
 
-groundSites = {"NASA HQ (D.C.)": Topos('38.883056 N', '-77.017369 E'), "NASA Mission Control Center": Topos('29.557857 N', '-95.089023 E'),
+groundSites = {
+"NASA HQ (D.C.)": Topos('38.883056 N', '-77.017369 E'), "NASA Mission Control Center": Topos('29.557857 N', '-95.089023 E'),
 "Kennedy Space Center": Topos('28.579680 N', '-80.653010 E'), "Moscow Mission Control Center": Topos('55.912104 N', '37.810254 E'),
 "Baikonur Cosmodrome (Kazakhstan)": Topos('45.963929 N', '63.305125 E'), "Canadian Space Center": Topos('45.521186 N', '-73.393632 E'),
 "German Space Operation Center": Topos('48.086873 N', '11.280641 E'), "South Point Satellite Station (Hawai'i)": Topos('18.913628 N', '-155.682263 E'),
@@ -39,13 +43,9 @@ groundSites = {"NASA HQ (D.C.)": Topos('38.883056 N', '-77.017369 E'), "NASA Mis
 "Canberra Deep Space Complex (Australia)": Topos('-35.401565 N', '148.981433 E'), 
 "KSAT Hartebeesthoek (South Africa)": Topos('-25.890233 N', '27.685390 E'),
 "North Pole Satellite Station (Alaska)": Topos('64.753870 N', '-147.345851 E'),
-"Master Control Facility (India)": Topos('13.071199 N', '76.099593 E')}
+"Master Control Facility (India)": Topos('13.071199 N', '76.099593 E')
+}
 horizonData = []
-
-# TODO: add a < while True: > loop to the program that checks for the times when the satellite data
-#be updated. It will need to check right after we pass hour = 0, minute = 7 and second = 36 to grab
-#all new data from space-track, and then again when hour = 12, minute = 7 and second = 36 to
-#recalculate a 24 hour orbit prediction with the data already grabbed from space-track
 
 #potential help to speed up calculations: 
 #https://github.com/skyfielders/python-skyfield/issues/30
@@ -159,7 +159,7 @@ ground4 = Topos('55.912104 N', '37.810254 E')
 ground5 = Topos('45.963929 N', '63.305125 E')
 ground6 = Topos('45.521186 N', '-73.393632 E')
 ground7 = Topos('48.086873 N', '11.280641 E')
-ground8 = Topos('46.994580 N', '8.310018 E')
+ground8 = Topos('18.913628 N', '-155.682263 E')
 ground9 = Topos('5.224441 N', '-52.776433 E')
 ground10 = Topos('36.065140 N', '140.127613 E')
 ground11 = Topos('-72.002914 N', '2.525675 E')
@@ -186,7 +186,7 @@ for craft in spacecraftNames:
 	print(craft[:-1])
 	# https://rhodesmill.org/brandon/2018/tiangong/
 
-	beginning = datetime.now()
+
 	# gets the spacecraft position at time t, which is a list in this case
 	geocentric = satellite.at(t)
 	# gets the longitude latitude of the point on the earth below the spacecraft,
@@ -269,5 +269,3 @@ for craft in spacecraftNames:
 			file.write(str(int(above_horizon14[i])) + ',')
 			file.write(str(int(above_horizon15[i])) + ',')
 			file.write('\n')
-	ending = datetime.now()
-	#print(alt, 'calculated in', ending - beginning, 'seconds')

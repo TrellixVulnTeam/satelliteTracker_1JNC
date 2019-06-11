@@ -279,7 +279,7 @@ path:hover {
     width: 100%;
     background: white;
     display: inline-block;
-    transition: all 0.5s cubic-bezier(.62,.43,.35,1.47);
+    transition: all 0.6s cubic-bezier(.62,.43,.35,1.47);
 }
 
 #check:checked ~ .button {
@@ -349,7 +349,7 @@ nav hr {
 /* the nav height will be set to the height in pixels that would have for default, 
 using height:auto won't work but you can put that value in pixels creating the slide*/
 #check:checked ~ nav{
-    height: 250px;
+    height: 260px;
 	border-bottom: 10px solid white;
 	border-radius: 10px 10px 10px 10px;
 }

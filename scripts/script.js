@@ -1,32 +1,23 @@
-/*
-TODO:
-tab for instructions/explanation:
-	https://www.w3schools.com/howto/howto_js_tabs.asp
-	https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_tabs_fade
-*/
 (function (window, document, undefined) {
     var canvas;
-    var scene, camera, renderer, controls, manager; // , stats;
+    var scene, camera, renderer, controls, manager;
     var windowW = window.innerWidth;
-    var sceneW = window.innerWidth / .8; //      size of the whole screen, adding /.8; after innerWidth moves the globe to the right
+    var sceneW = window.innerWidth / .8; //size of the whole screen, adding /.8; after innerWidth moves the globe to the right
     var windowH = window.innerHeight;
 	
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
 	
     var mouse = new THREE.Vector2();
-	var OL;
 	var numCraft;
 	var len;
-	var rawSatData = []; //the array holding all the satellite data after parsing csv
-	var spacecraft = [];
-	var points = [];
-	var times = [];
+	var rawSatData = []; //the array holding all the satellite data after parsing the csv
+	var spacecraft = []; //an array of the names of the satellites (for ease of use across multiple functions)
 	var satTime;
-	var sites = [];
-	var satDict = {};
-	var satImg = {};
-	var groundSites = {};
+	var sites = []; //the array holding all the groundsite data after parsing the csv
+	var satDict = {}; // dictionary of satellite paths
+	var satImg = {}; // dictionary of satellite sprites
+	var groundSites = {}; // dictionary of groundsite markers
 	
     function onMouseMove(event) {
         // calculate mouse position in normalized device coordinates
@@ -42,7 +33,7 @@ tab for instructions/explanation:
 		  var d = Date.now();
 			var timeDiff = Math.floor((d-satTime)/60000);
 			for ( var i = 0; i < numCraft; i++) {
-				var satName = rawSatData[i*OL].name;
+				var satName = rawSatData[i*len[0].l].name;
 				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff-1].x;
 				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
 				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;	
@@ -109,13 +100,13 @@ tab for instructions/explanation:
 		//this gives us the index of the orbital point we are headed towards
 		var timeDiff = Math.floor((d-satTime)/60000);
 		for ( var i = 0; i < numCraft; i++) {
-			var satName = rawSatData[i*OL].name;
+			var satName = rawSatData[i*len[0].l].name;
 			// updates the position of the satellite to be be an addition 1/3400 closer to the next orbital point
 			satImg[satName].position.x+= (satDict[satName].geometry.vertices[timeDiff].x - satImg[satName].position.x)/divisor;
 			satImg[satName].position.y+= (satDict[satName].geometry.vertices[timeDiff].y - satImg[satName].position.y)/divisor;
 			satImg[satName].position.z+= (satDict[satName].geometry.vertices[timeDiff].z - satImg[satName].position.z)/divisor;
 			if (satName != "ISS ZARYA") {
-				var r = ((rawSatData[i*OL].elevation+6378)*10/6378)/12;
+				var r = ((rawSatData[i*len[0].l].elevation+6378)*10/6378)/12;
 				if (r > 10) r = 10;
 				satImg[satName].scale = (r, r, 1);
 			}
@@ -132,54 +123,54 @@ tab for instructions/explanation:
 	function addVisiblePath(checkboxes) {
 		for (var i = 0; i < numCraft; i++) {
 			var pathColor = 0x0000ff;
-			var satName = rawSatData[i*OL].name;
+			var satName = rawSatData[i*len[0].l].name;
 			var prev = 0;
-			for (var j = 0; j < OL - 1; j++) {
+			for (var j = 0; j < len[0].l - 1; j++) {
 				var current = 0;
 				if (searchBox(0, checkboxes)) {
-					current += rawSatData[i*OL+j].h1;
+					current += rawSatData[i*len[0].l+j].h1;
 				}
 				if (searchBox(1, checkboxes)) {
-					current += rawSatData[i*OL+j].h2;
+					current += rawSatData[i*len[0].l+j].h2;
 				}
 				if (searchBox(2, checkboxes)) {
-					current += rawSatData[i*OL+j].h3;
+					current += rawSatData[i*len[0].l+j].h3;
 				}
 				if (searchBox(3, checkboxes)) {
-					current += rawSatData[i*OL+j].h4;
+					current += rawSatData[i*len[0].l+j].h4;
 				}
 				if (searchBox(4, checkboxes)) {
-					current += rawSatData[i*OL+j].h4;
+					current += rawSatData[i*len[0].l+j].h4;
 				}
 				if (searchBox(5, checkboxes)) {
-					current += rawSatData[i*OL+j].h6;
+					current += rawSatData[i*len[0].l+j].h6;
 				}
 				if (searchBox(6, checkboxes)) {
-					current += rawSatData[i*OL+j].h7;
+					current += rawSatData[i*len[0].l+j].h7;
 				}
 				if (searchBox(7, checkboxes)) {
-					current += rawSatData[i*OL+j].h8;
+					current += rawSatData[i*len[0].l+j].h8;
 				}
 				if (searchBox(8, checkboxes)) {
-					current += rawSatData[i*OL+j].h9;
+					current += rawSatData[i*len[0].l+j].h9;
 				}
 				if (searchBox(9, checkboxes)) {
-					current += rawSatData[i*OL+j].h10;
+					current += rawSatData[i*len[0].l+j].h10;
 				}
 				if (searchBox(10, checkboxes)) {
-					current += rawSatData[i*OL+j].h11;
+					current += rawSatData[i*len[0].l+j].h11;
 				}
 				if (searchBox(11, checkboxes)) {
-					current += rawSatData[i*OL+j].h12;
+					current += rawSatData[i*len[0].l+j].h12;
 				}
 				if (searchBox(12, checkboxes)) {
-					current += rawSatData[i*OL+j].h13;
+					current += rawSatData[i*len[0].l+j].h13;
 				}
 				if (searchBox(13, checkboxes)) {
-					current += rawSatData[i*OL+j].h14;
+					current += rawSatData[i*len[0].l+j].h14;
 				}
 				if (searchBox(14, checkboxes)) {
-					current += rawSatData[i*OL+j].h15;
+					current += rawSatData[i*len[0].l+j].h15;
 				}
 				
 				if (current > 0 && prev == 0) {
@@ -343,7 +334,7 @@ tab for instructions/explanation:
         controls.dampingFactor = 0.3;
         controls.enablePan = false;
 		controls.minDistance = 20.5;
-		controls.maxDistance = 1000;
+		controls.maxDistance = 850;
     }
 	
     //Create sphere geometry and put the earth outline image onto it
@@ -391,48 +382,41 @@ tab for instructions/explanation:
 	
 	// creates the path of the satellites based on the information in the csv
 	function satPath() {
-		//list of orbital points per spacecraft
-		OL = len[0].l;
 		//number of spacecraft to be shown
-		numCraft = rawSatData.length/OL;
+		numCraft = rawSatData.length/len[0].l;
 		var r, lat, lon, x, y, z;
 		var timeDiff;
 		for (var i = 0; i < numCraft; i++) {
-			points.push([]);
 			var material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
 			var geometry = new THREE.Geometry();
-			var satName = rawSatData[i*OL].name;
+			var satName = rawSatData[i*len[0].l].name;
 			var prev = 0;
-			for (var j = 0; j < OL; j++) {
+			for (var j = 0; j < len[0].l; j++) {
 				var current = 0;
-				if (rawSatData[i*OL+j].second > 30) {
-				rawSatData[i*OL+j].second = 0;
-				rawSatData[i*OL+j].minute += 1;
+				if (rawSatData[i*len[0].l+j].second > 30) {
+				rawSatData[i*len[0].l+j].second = 0;
+				rawSatData[i*len[0].l+j].minute += 1;
 				}
 				else {
-					rawSatData[i*OL+j].second = 0;
+					rawSatData[i*len[0].l+j].second = 0;
 				}
-				
-				// I don't know why you have to subtract a month off, but you do in order to get the
-				//correct date. You also need to subtract 6 hours in order to get the correct UTC time
-				var d = new Date(rawSatData[i*OL+j].year, rawSatData[i*OL+j].month - 1, 
-				rawSatData[i*OL+j].day, rawSatData[i*OL+j].hour - 6, rawSatData[i*OL+j].minute - 1);
-				d = d.getTime();
-				//adds the date to a list of dates for each orbital point in the 24 hour period calculated byte
-				//the python side of the program
-				times.push(d);
 				
 				//this just grabs the first element of the time array and spits out timeDiff, which
 				// is the index of the next orbital point from where we currently are
 				if (i == 0 && j == 0) {
-					satTime = times[0];
-					var d = Date.now();
-					timeDiff = Math.floor((d-satTime)/60000);
+					// I don't know why you have to subtract a month off, but you do in order to get the
+					//correct date. You also need to subtract 6 hours in order to get the correct UTC time
+					var d = new Date(rawSatData[i*len[0].l+j].year, rawSatData[i*len[0].l+j].month - 1, 
+					rawSatData[i*len[0].l+j].day, rawSatData[i*len[0].l+j].hour - 6, rawSatData[i*len[0].l+j].minute - 1);
+					d = d.getTime();
+					satTime = d;
+					var currentTime = Date.now();
+					timeDiff = Math.floor((currentTime-satTime)/60000);
 				}
 
-				r = ((rawSatData[i*OL+j].elevation+6378)*10/6378);
-				lat = rawSatData[i*OL+j].latitude;
-				lon = rawSatData[i*OL+j].longitude;
+				r = ((rawSatData[i*len[0].l+j].elevation+6378)*10/6378);
+				lat = rawSatData[i*len[0].l+j].latitude;
+				lon = rawSatData[i*len[0].l+j].longitude;
 				var phi = (90-lat)*(Math.PI/180);
 				var theta = (lon+180)*(Math.PI/180);
 
@@ -441,7 +425,6 @@ tab for instructions/explanation:
 				y = ((r) * Math.cos(phi));
 				
 				var vert = new THREE.Vector3(x, y, z);
-				points[i].push(vert);
 				
 				geometry.colors[j] = new THREE.Color(0x0000ff);
 				geometry.vertices.push(vert);
