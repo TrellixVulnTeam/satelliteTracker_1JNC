@@ -7,7 +7,7 @@
 	
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
-	
+	var divisor = 3400; //the divisor variable is set to 3400 because we expect the whole thing to run at about 3400/60 = ~57 fps
     var mouse = new THREE.Vector2();
 	var numCraft;
 	var len;
@@ -95,8 +95,7 @@
 	//the following function moves the satellites along the path in real time
 	function updateSat() {
 		var d = Date.now();
-		//the divisor variable is set to 3400 because we expect the whole thing to run at about 3400/60 = ~57 fps
-		var divisor = 3400;
+		
 		//this gives us the index of the orbital point we are headed towards
 		var timeDiff = Math.floor((d-satTime)/60000);
 		for ( var i = 0; i < numCraft; i++) {
@@ -111,6 +110,8 @@
 				satImg[satName].scale = (r, r, 1);
 			}
 		}
+		divisor -= 1;
+		if (divisor == 0) { divisor = 3400;}
 	}
 	
 	function searchBox(k, boxes) {
