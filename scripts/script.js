@@ -7,39 +7,20 @@
 	
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
-	var divisor = 3400; //the divisor variable is set to 3400 because we expect the whole thing to run at about 3400/60 = ~57 fps
+	
     var mouse = new THREE.Vector2();
-	var numCraft;
-	var len;
+	var numCraft; // number of satellites
+	var numOrbitalPts; //number of points for each satellite path
 	var rawSatData = []; //the array holding all the satellite data after parsing the csv
 	var spacecraft = []; //an array of the names of the satellites (for ease of use across multiple functions)
-	var satTime;
+	var satTime; // the first datetime in the satellite data. Used to calculate an index in updateSat() and visibilitychange eventlistener
 	var sites = []; //the array holding all the groundsite data after parsing the csv
 	var satDict = {}; // dictionary of satellite paths
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
+	var clickedObj = null; // the line that is currently clicked 
 	
-    function onMouseMove(event) {
-        // calculate mouse position in normalized device coordinates
-        // (-1 to +1) for both components
-        mouse.x = (event.clientX / sceneW) * 2 - 1;
-        mouse.y = -(event.clientY / windowH) * 2 + 1;
-    }
-
-	window.addEventListener( 'resize', onWindowResize, false );
-	window.addEventListener('mousemove', onMouseMove, false);
-	document.addEventListener('visibilitychange', function () {
-	  if (!document.hidden) {
-		  var d = Date.now();
-			var timeDiff = Math.floor((d-satTime)/60000);
-			for ( var i = 0; i < numCraft; i++) {
-				var satName = rawSatData[i*len[0].l].name;
-				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff-1].x;
-				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
-				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;	
-			}
-		}
-	}, false)
+    
 	
 	function openSideBar() {
 		setTimeout(function(){
@@ -66,52 +47,27 @@
 		}, 1400);
 		$('body').addClass('loaded');
 	}
-
-	document.querySelector('#gsAll').onclick = function (ev) {
-		checkAll(ev.target.checked, 'gsCheck');
-	}
-	document.querySelector('#gsAll').onkeyup = function (ev) {
-		ev.preventDefault();
-	}
-	document.querySelector('#listgs').onclick = function (ev) {
-		checkClick(ev.target.name,ev.target.checked,'gsCheck');
-	}
-	document.querySelector('#listgs').onkeyup = function (ev) {
-		ev.preventDefault();
-	}
-	document.querySelector('#allCheck').onclick = function (ev) {
-		checkAll(ev.target.checked, 'spacecraftCheck');
-	}
-	document.querySelector('#allCheck').onkeyup = function (ev) {
-		ev.preventDefault();
-	}
-	document.querySelector('#listCraft').onclick = function (ev) {
-		checkClick(ev.target.name,ev.target.checked,'spacecraftCheck');
-	}
-	document.querySelector('#listCraft').onkeyup = function (ev) {
-		ev.preventDefault();
-	}
 	
 	//the following function moves the satellites along the path in real time
 	function updateSat() {
 		var d = Date.now();
-		
+		//the divisor variable is set to 3600 because we expect the whole thing to run at about 3600/60 = 60 fps
+		var divisor = 3600;
 		//this gives us the index of the orbital point we are headed towards
 		var timeDiff = Math.floor((d-satTime)/60000);
 		for ( var i = 0; i < numCraft; i++) {
-			var satName = rawSatData[i*len[0].l].name;
-			// updates the position of the satellite to be be an addition 1/3400 closer to the next orbital point
+			var satName = rawSatData[i*numOrbitalPts].name;
+			// updates the position of the satellite to be be an addition 1/3600closer to the next orbital point.
+			// this will mean that the satellite doesn't move at the same speed all the time.	
 			satImg[satName].position.x+= (satDict[satName].geometry.vertices[timeDiff].x - satImg[satName].position.x)/divisor;
 			satImg[satName].position.y+= (satDict[satName].geometry.vertices[timeDiff].y - satImg[satName].position.y)/divisor;
 			satImg[satName].position.z+= (satDict[satName].geometry.vertices[timeDiff].z - satImg[satName].position.z)/divisor;
 			if (satName != "ISS ZARYA") {
-				var r = ((rawSatData[i*len[0].l].elevation+6378)*10/6378)/12;
+				var r = ((rawSatData[i*numOrbitalPts].elevation+6378)*10/6378)/12;
 				if (r > 10) r = 10;
 				satImg[satName].scale = (r, r, 1);
 			}
 		}
-		divisor -= 1;
-		if (divisor == 0) { divisor = 3400;}
 	}
 	
 	function searchBox(k, boxes) {
@@ -124,56 +80,56 @@
 	function addVisiblePath(checkboxes) {
 		for (var i = 0; i < numCraft; i++) {
 			var pathColor = 0x0000ff;
-			var satName = rawSatData[i*len[0].l].name;
+			var satName = rawSatData[i*numOrbitalPts].name;
 			var prev = 0;
-			for (var j = 0; j < len[0].l - 1; j++) {
+			for (var j = 0; j < numOrbitalPts - 1; j++) {
+				var index = i*numOrbitalPts+j;
 				var current = 0;
 				if (searchBox(0, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h1;
+					current += rawSatData[index].h1;
 				}
 				if (searchBox(1, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h2;
+					current += rawSatData[index].h2;
 				}
 				if (searchBox(2, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h3;
+					current += rawSatData[index].h3;
 				}
 				if (searchBox(3, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h4;
+					current += rawSatData[index].h4;
 				}
 				if (searchBox(4, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h4;
+					current += rawSatData[index].h5;
 				}
 				if (searchBox(5, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h6;
+					current += rawSatData[index].h6;
 				}
 				if (searchBox(6, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h7;
+					current += rawSatData[index].h7;
 				}
 				if (searchBox(7, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h8;
+					current += rawSatData[index].h8;
 				}
 				if (searchBox(8, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h9;
+					current += rawSatData[index].h9;
 				}
 				if (searchBox(9, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h10;
+					current += rawSatData[index].h10;
 				}
 				if (searchBox(10, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h11;
+					current += rawSatData[index].h11;
 				}
 				if (searchBox(11, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h12;
+					current += rawSatData[index].h12;
 				}
 				if (searchBox(12, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h13;
+					current += rawSatData[index].h13;
 				}
 				if (searchBox(13, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h14;
+					current += rawSatData[index].h14;
 				}
 				if (searchBox(14, checkboxes)) {
-					current += rawSatData[i*len[0].l+j].h15;
+					current += rawSatData[index].h15;
 				}
-				
 				if (current > 0 && prev == 0) {
 					pathColor = 0xff0000;
 					satDict[satName].geometry.colors[j] = new THREE.Color(pathColor);
@@ -256,7 +212,6 @@
 			allButton = 'gsAll';
 		}
 		var checkboxes = document.getElementsByClassName(cl);
-		
 		checkForAllChecked(checkboxes,allButton,cl);
 	}
 
@@ -320,9 +275,9 @@
     }
 	
 	function onWindowResize(){
-		camera.aspect = window.innerWidth/.77/window.innerHeight;
+		camera.aspect = window.innerWidth/.8/window.innerHeight;
 		camera.updateProjectionMatrix();
-		renderer.setSize(window.innerWidth/.77,window.innerHeight);
+		renderer.setSize(window.innerWidth/.8,window.innerHeight);
 	}
 	
     //Three.OrbitControls setup procedure
@@ -354,6 +309,7 @@
         outlineMesh.scale.multiplyScalar(1.004);
         var planetMesh = new THREE.Mesh(planet, planetMat);
         planetMesh.add(outlineMesh);
+		planetMesh.name = "globe";
         scene.add(planetMesh);
     }
 	
@@ -384,22 +340,23 @@
 	// creates the path of the satellites based on the information in the csv
 	function satPath() {
 		//number of spacecraft to be shown
-		numCraft = rawSatData.length/len[0].l;
+		numCraft = rawSatData.length/numOrbitalPts;
 		var r, lat, lon, x, y, z;
 		var timeDiff;
 		for (var i = 0; i < numCraft; i++) {
 			var material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
 			var geometry = new THREE.Geometry();
-			var satName = rawSatData[i*len[0].l].name;
+			var satName = rawSatData[i*numOrbitalPts].name;
 			var prev = 0;
-			for (var j = 0; j < len[0].l; j++) {
+			for (var j = 0; j < numOrbitalPts; j++) {
 				var current = 0;
-				if (rawSatData[i*len[0].l+j].second > 30) {
-				rawSatData[i*len[0].l+j].second = 0;
-				rawSatData[i*len[0].l+j].minute += 1;
+				var index = i*numOrbitalPts+j;
+				if (rawSatData[index].second > 30) {
+				rawSatData[index].second = 0;
+				rawSatData[index].minute += 1;
 				}
 				else {
-					rawSatData[i*len[0].l+j].second = 0;
+					rawSatData[index].second = 0;
 				}
 				
 				//this just grabs the first element of the time array and spits out timeDiff, which
@@ -407,17 +364,16 @@
 				if (i == 0 && j == 0) {
 					// I don't know why you have to subtract a month off, but you do in order to get the
 					//correct date. You also need to subtract 6 hours in order to get the correct UTC time
-					var d = new Date(rawSatData[i*len[0].l+j].year, rawSatData[i*len[0].l+j].month - 1, 
-					rawSatData[i*len[0].l+j].day, rawSatData[i*len[0].l+j].hour - 6, rawSatData[i*len[0].l+j].minute - 1);
-					d = d.getTime();
-					satTime = d;
+					var d = new Date(rawSatData[index].year, rawSatData[index].month - 1, 
+					rawSatData[index].day, rawSatData[index].hour - 6, rawSatData[index].minute - 1);
+					satTime = d = d.getTime();
 					var currentTime = Date.now();
-					timeDiff = Math.floor((currentTime-satTime)/60000);
+					timeDiff = Math.floor((currentTime-d)/60000);
 				}
 
-				r = ((rawSatData[i*len[0].l+j].elevation+6378)*10/6378);
-				lat = rawSatData[i*len[0].l+j].latitude;
-				lon = rawSatData[i*len[0].l+j].longitude;
+				r = ((rawSatData[index].elevation+6378)*10/6378);
+				lat = rawSatData[index].latitude;
+				lon = rawSatData[index].longitude;
 				var phi = (90-lat)*(Math.PI/180);
 				var theta = (lon+180)*(Math.PI/180);
 
@@ -445,11 +401,9 @@
 						sprite.visible = false;
 					}
 					else {
-						// I was going to have some fun and have each satellite image randomly selected to 
-						//give some variety, but I commented out the code so it just uses the sat3.png image
-						//var img =  Math.floor(Math.random() * 3) + 1;
-						//var imgLoc = 'img/sat' + img + '.png'
-						var spriteMap = new THREE.TextureLoader().load( /*imgLoc*/ 'img/sat3.png' );
+						var imgNum =  Math.floor(Math.random() * 5	) + 1;
+						var imgLoc = 'img/sat' + imgNum + '.png'
+						var spriteMap = new THREE.TextureLoader().load( imgLoc );
 						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff} );
 						var sprite = new THREE.Sprite( spriteMaterial );
 						var imgScale = r/12;
@@ -505,6 +459,7 @@
         raycaster.setFromCamera(mouse, camera);
         for (var i = 1; i < scene.children.length; i++) {
 			if (scene.children[i].type == "Line") {
+				if (scene.children[i].name == clickedObj) {continue;}
 				scene.children[i].material.opacity = 0.4;
 			}
         }
@@ -516,8 +471,10 @@
                 intersects[0].object.material.opacity = 1.0;
             }
 			else if (intersects[0].object.type == "Sprite") {
-                console.log(intersects[0].object.name);
+                //console.log(intersects[0].object.name);
             }
+			else {
+			}
         }
     }
 	
@@ -546,7 +503,8 @@
 			l: +d.len
         };
     }, function (data) {
-        len = data.slice(); //copy 
+        numOrbitalPts = data.slice();
+		numOrbitalPts = numOrbitalPts[0].l;
     });
 	
 	// pulls the satellite data from the .csv and populates a list with it
@@ -584,5 +542,96 @@
 		init();
     });
 	
+	document.querySelector('#gsAll').onclick = function (ev) {
+		checkAll(ev.target.checked, 'gsCheck');
+	}
+	document.querySelector('#gsAll').onkeyup = function (ev) {
+		ev.preventDefault();
+	}
+	document.querySelector('#listgs').onclick = function (ev) {
+		checkClick(ev.target.name,ev.target.checked,'gsCheck');
+	}
+	document.querySelector('#listgs').onkeyup = function (ev) {
+		ev.preventDefault();
+	}
+	document.querySelector('#allCheck').onclick = function (ev) {
+		checkAll(ev.target.checked, 'spacecraftCheck');
+	}
+	document.querySelector('#allCheck').onkeyup = function (ev) {
+		ev.preventDefault();
+	}
+	document.querySelector('#listCraft').onclick = function (ev) {
+		checkClick(ev.target.name,ev.target.checked,'spacecraftCheck');
+	}
+	document.querySelector('#listCraft').onkeyup = function (ev) {
+		ev.preventDefault();
+	}
+	
+	function onMouseMove(event) {
+        // calculate mouse position in normalized device coordinates
+        // (-1 to +1) for both components
+        mouse.x = (event.clientX / sceneW) * 2 - 1;
+        mouse.y = -(event.clientY / windowH) * 2 + 1;
+    }
+	
+	window.addEventListener("keydown", function(e) {
+			// space and arrow keys
+			if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+				e.preventDefault();
+			}
+		}, false);
+	window.addEventListener( 'resize', onWindowResize, false );
+	window.addEventListener('mousemove', onMouseMove, false);
+	document.addEventListener('visibilitychange', function () {
+	  if (!document.hidden) {
+		  var d = Date.now();
+			var timeDiff = Math.floor((d-satTime)/60000);
+			for ( var i = 0; i < numCraft; i++) {
+				var satName = rawSatData[i*numOrbitalPts].name;
+				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff-1].x;
+				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
+				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;	
+			}
+		}
+	}, false)
+	
+	
+
+	document.addEventListener( 'click', function(ev) {
+		raycaster.setFromCamera(mouse, camera);
+		for (var i = 1; i < scene.children.length; i++) {
+			if (scene.children[i].type == "Line") {
+				if (scene.children[i].name == clickedObj) {continue;}
+				scene.children[i].material.opacity = 0.4;
+			}
+		}
+		//calculate objects intersecting the picking ray
+		var intersects = raycaster.intersectObjects(scene.children);
+		//only first intersect
+		if (intersects.length != 0) {
+			console.log(intersects[0].object);
+			if (intersects[0].object.type == "Line") {
+				if (intersects[0].object.material.opacity == 1.0) {
+					intersects[0].object.material.opacity = 0.4;
+					clickedObj = null;
+				}
+				else {
+				intersects[0].object.material.opacity = 1.0;
+				clickedObj = intersects[0].object.name;
+				}	
+			}
+			else if (intersects[0].object.type == "Sprite") {
+				console.log(intersects[0].object.name, "sprite");
+			}
+			document.addEventListener("drag", function (moved) {
+				moved = true;
+			}, false);
+		}
+		else if (mouse.x < .56 && mouse.y < .9) {
+			if (mouse.x > -.68) {
+				clickedObj = null;
+			}
+		}
+	}, false);
 
 })(window, document);
