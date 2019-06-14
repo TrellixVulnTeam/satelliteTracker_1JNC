@@ -1,9 +1,11 @@
 (function (window, document, undefined) {
     var canvas;
-    var scene, camera, renderer, controls, manager;
+    var scene, camera, renderer, controls, manager, light;
     var windowW = window.innerWidth;
     var sceneW = window.innerWidth / .8; //size of the whole screen, adding /.8; after innerWidth moves the globe to the right
     var windowH = window.innerHeight;
+	
+	var angle = 0;
 	
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
@@ -68,6 +70,14 @@
 				satImg[satName].scale = (r, r, 1);
 			}
 		}
+	}
+	
+	function updateLight() {
+		angle+= .01;
+		light.position.y =  20*Math.sin(angle) + 0;
+		light.position.x = 20*Math.cos(angle) + 0;
+		light.position.z = 20*Math.sin(angle) + 0;
+		//planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
 	}
 	
 	function searchBox(k, boxes) {
@@ -198,6 +208,7 @@
 			else {
 				sat.visible = false;
 				img.visible = false;
+				sat.material.opacity = 0.4;
 			}
 			allButton = 'allCheck';
 		}
@@ -269,16 +280,11 @@
         camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 10000);
         camera.position.z = 22;
 		camera.position.y = 13;
-        renderer.shadowMap.enabled = false;
+        renderer.shadowMap.enabled = true;
+		renderer.shadowMapSoft = true;
         manager = new THREE.LoadingManager();
         manager.onLoad = function () {openSideBar();render();};
     }
-	
-	function onWindowResize(){
-		camera.aspect = window.innerWidth/.8/window.innerHeight;
-		camera.updateProjectionMatrix();
-		renderer.setSize(window.innerWidth/.8,window.innerHeight);
-	}
 	
     //Three.OrbitControls setup procedure
     function setupControls() {
@@ -296,14 +302,23 @@
     //Create sphere geometry and put the earth outline image onto it
     function createEarth() {
         var planet = new THREE.SphereGeometry(10, 128, 128);
-        //planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
-        var planetMat = new THREE.MeshBasicMaterial({color: 0xffffff});
+		//planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
+		var planetMat = new THREE.MeshPhongMaterial();
+        //var planetMat = new THREE.MeshBasicMaterial({color: 0xffffff});
         var TextureLoader = new THREE.TextureLoader(manager);
         TextureLoader.load('img/marble.jpg', function (texture) {
             texture.anisotropy = 8;
             planetMat.map = texture;
+			planetMat.specular = new THREE.Color('grey');
+			planetMat.shininess = 0;
             planetMat.needsUpdate = false;
         });
+		/*TextureLoader.load('img/spec.png', function (texture) {
+            texture.anisotropy = 8;
+            planetMat.specularMap = texture;
+			planetMat.specular = new THREE.Color('grey');
+            planetMat.needsUpdate = false;
+        });*/
         var outlineMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
         var outlineMesh = new THREE.Mesh(planet, outlineMaterial);
         outlineMesh.scale.multiplyScalar(1.004);
@@ -311,6 +326,24 @@
         planetMesh.add(outlineMesh);
 		planetMesh.name = "globe";
         scene.add(planetMesh);
+		
+		var stars = new THREE.SphereGeometry(3000, 64, 64);
+		var starsMat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
+		TextureLoader.load('img/starfield2.png', function (texture) {
+			texture.anisotropy = 8;
+			starsMat.map = texture;
+			starsMat.needsUpdate = false;
+		});
+		var starsMesh = new THREE.Mesh(stars, starsMat);
+		scene.add(starsMesh);
+		
+		scene.add(new THREE.AmbientLight(0x444444));
+		
+		light = new THREE.DirectionalLight(0xcccccc, 1.3);
+		light.position.set(15,0,0);
+		light.castShadow = true;
+		scene.add(light);
+		//planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
     }
 	
 	function groundSite() {
@@ -439,7 +472,7 @@
 	}
 	
     function init() {
-        window.addEventListener('mousemove', onMouseMove, false);
+        
         window.onkeyup = function (e) {
             var key = e.keyCode ? e.keyCode : e.which;
             if (key == 32) {
@@ -481,6 +514,7 @@
     function render() {
         requestAnimationFrame(render);
 		updateSat();
+		updateLight();
         controls.update();
         if (mouse.x < sceneW) {
             checkForRaycasts();
@@ -567,12 +601,7 @@
 		ev.preventDefault();
 	}
 	
-	function onMouseMove(event) {
-        // calculate mouse position in normalized device coordinates
-        // (-1 to +1) for both components
-        mouse.x = (event.clientX / sceneW) * 2 - 1;
-        mouse.y = -(event.clientY / windowH) * 2 + 1;
-    }
+	
 	
 	window.addEventListener("keydown", function(e) {
 			// space and arrow keys
@@ -580,21 +609,17 @@
 				e.preventDefault();
 			}
 		}, false);
-	window.addEventListener( 'resize', onWindowResize, false );
-	window.addEventListener('mousemove', onMouseMove, false);
-	document.addEventListener('visibilitychange', function () {
-	  if (!document.hidden) {
-		  var d = Date.now();
-			var timeDiff = Math.floor((d-satTime)/60000);
-			for ( var i = 0; i < numCraft; i++) {
-				var satName = rawSatData[i*numOrbitalPts].name;
-				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff-1].x;
-				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
-				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;	
-			}
-		}
-	}, false)
-	
+	window.addEventListener( 'resize', function (){
+		camera.aspect = window.innerWidth/.8/window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(window.innerWidth/.8,window.innerHeight);
+	}, false );
+	window.addEventListener('mousemove', function (ev) {
+        // calculate mouse position in normalized device coordinates
+        // (-1 to +1) for both components
+        mouse.x = (ev.clientX / sceneW) * 2 - 1;
+        mouse.y = -(ev.clientY / windowH) * 2 + 1;
+    }, false);
 	
 
 	document.addEventListener( 'click', function(ev) {
@@ -609,7 +634,6 @@
 		var intersects = raycaster.intersectObjects(scene.children);
 		//only first intersect
 		if (intersects.length != 0) {
-			console.log(intersects[0].object);
 			if (intersects[0].object.type == "Line") {
 				if (intersects[0].object.material.opacity == 1.0) {
 					intersects[0].object.material.opacity = 0.4;
@@ -627,9 +651,21 @@
 				moved = true;
 			}, false);
 		}
-		else if (mouse.x < .56 && mouse.y < .9) {
+		/*else if (mouse.x < .56 && mouse.y < .9) {
 			if (mouse.x > -.68) {
 				clickedObj = null;
+			}
+		}*/
+	}, false);
+	document.addEventListener('visibilitychange', function () {
+	  if (!document.hidden) {
+		  var d = Date.now();
+			var timeDiff = Math.floor((d-satTime)/60000);
+			for ( var i = 0; i < numCraft; i++) {
+				var satName = rawSatData[i*numOrbitalPts].name;
+				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff-1].x;
+				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
+				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;
 			}
 		}
 	}, false);

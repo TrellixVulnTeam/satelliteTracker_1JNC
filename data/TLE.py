@@ -6,6 +6,7 @@ from numpy import diff
 import numpy as np
 # pip install skyfield	  https://rhodesmill.org/skyfield/
 from skyfield.api import Topos, load
+from skyfield import almanac
 import json
 # https://pynative.com/python-mysql-database-connection/	https://pynative.com/install-mysql-connector-python/
 # pip install mysql-connector-python
@@ -178,8 +179,9 @@ minutes = range(m*hr)
 fl = "satelliteData.csv"
 # creates a list of times for each minute of the above minutes list
 t = ts.utc(d.year, d.month, d.day, d.hour + (d.minute / 60), minutes)
+print(t)
 mountain = timezone('US/Mountain')
-for craft in spacecraftNames:
+"""for craft in spacecraftNames:
 	# grabs a spacecraft by its name from the dictionary, removing the \n
 	# character at the end of the spacecraftNames string
 	satellite = satellites[craft[:-1]]
@@ -268,4 +270,18 @@ for craft in spacecraftNames:
 			file.write(str(int(above_horizon13[i])) + ',')
 			file.write(str(int(above_horizon14[i])) + ',')
 			file.write(str(int(above_horizon15[i])) + ',')
-			file.write('\n')
+			file.write('\n')"""
+
+planets = load('de421.bsp')
+earth = planets['earth']
+mars = planets['sun']
+fl = 'sun.csv'
+with open(fl, 'w') as file:
+	file.write('x,')
+	file.write('y,')
+	file.write('z,\n')
+	for tTime in t:
+		a = earth.at(tTime).observe(mars).apparent()
+		for pos in a.position.km:
+			file.write(str(pos) + ',')
+		file.write('\n')
