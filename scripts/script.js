@@ -5,8 +5,6 @@
     var sceneW = window.innerWidth / .8; //size of the whole screen, adding /.8; after innerWidth moves the globe to the right
     var windowH = window.innerHeight;
 	
-	var angle = 0;
-	
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
 	
@@ -17,12 +15,40 @@
 	var spacecraft = []; //an array of the names of the satellites (for ease of use across multiple functions)
 	var satTime; // the first datetime in the satellite data. Used to calculate an index in updateSat() and visibilitychange eventlistener
 	var sites = []; //the array holding all the groundsite data after parsing the csv
+	var sunPos = []; //the array holding the position of the sun over a 24 hour period
 	var satDict = {}; // dictionary of satellite paths
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
 	var clickedObj = null; // the line that is currently clicked 
 	
-    
+     // Three.js setup procedure
+    function setupScene() {
+        scene = new THREE.Scene();
+        canvas = document.getElementById("scene");
+        renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
+        renderer.setSize(sceneW, windowH);
+        renderer.setClearColor(0x000000, 1);
+        camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 4000);
+        camera.position.z = 22;
+		camera.position.y = 3;
+        renderer.shadowMap.enabled = true;
+		renderer.shadowMapSoft = true;
+        manager = new THREE.LoadingManager();
+        manager.onLoad = function () {openSideBar();render();};
+    } 
+
+    //Three.OrbitControls setup procedure
+    function setupControls() {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 0.04;
+        controls.rotateSpeed = 0.2;
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.3;
+        controls.enablePan = false;
+		controls.minDistance = 20.5;
+		controls.maxDistance = 850;
+    }	
 	
 	function openSideBar() {
 		setTimeout(function(){
@@ -54,7 +80,7 @@
 	function updateSat() {
 		var d = Date.now();
 		//the divisor variable is set to 3600 because we expect the whole thing to run at about 3600/60 = 60 fps
-		var divisor = 3600;
+		var divisor = 3500;
 		//this gives us the index of the orbital point we are headed towards
 		var timeDiff = Math.floor((d-satTime)/60000);
 		for ( var i = 0; i < numCraft; i++) {
@@ -72,12 +98,15 @@
 		}
 	}
 	
+	//this function moves the directional light around the earth to show which parts of the earth
+	//are currently lit by the sun in real time
 	function updateLight() {
-		angle+= .01;
-		light.position.y =  20*Math.sin(angle) + 0;
-		light.position.x = 20*Math.cos(angle) + 0;
-		light.position.z = 20*Math.sin(angle) + 0;
-		//planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
+		var d = Date.now();
+		var timeDiff = Math.floor((d-satTime)/60000);
+		var divisor = 3500;
+		light.position.x+= (sunPos[timeDiff].x - light.position.x)/divisor;
+		light.position.x+= (sunPos[timeDiff].y - light.position.y)/divisor;
+		light.position.x+= (sunPos[timeDiff].z - light.position.z)/divisor;
 	}
 	
 	function searchBox(k, boxes) {
@@ -171,6 +200,7 @@
 				else {
 					checkboxes[i].checked = false;
 					satDict[checkboxes[i].name].visible = false;
+					satDict[checkboxes[i].name].material.opacity = 0.4;
 					satImg[checkboxes[i].name].visible = false;
 				}
 			}
@@ -269,59 +299,21 @@
 		}
 		document.getElementById("listgs").innerHTML = text;
 	}
-	
-    // Three.js setup procedure
-    function setupScene() {
-        scene = new THREE.Scene();
-        canvas = document.getElementById("scene");
-        renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
-        renderer.setSize(sceneW, windowH);
-        renderer.setClearColor(0x000000, 1);
-        camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 10000);
-        camera.position.z = 22;
-		camera.position.y = 13;
-        renderer.shadowMap.enabled = true;
-		renderer.shadowMapSoft = true;
-        manager = new THREE.LoadingManager();
-        manager.onLoad = function () {openSideBar();render();};
-    }
-	
-    //Three.OrbitControls setup procedure
-    function setupControls() {
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.autoRotate = false;
-        controls.autoRotateSpeed = 0.04;
-        controls.rotateSpeed = 0.2;
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.3;
-        controls.enablePan = false;
-		controls.minDistance = 20.5;
-		controls.maxDistance = 850;
-    }
-	
-    //Create sphere geometry and put the earth outline image onto it
+		
+    //Creates the earth, starfield, and lights
     function createEarth() {
         var planet = new THREE.SphereGeometry(10, 128, 128);
-		//planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
 		var planetMat = new THREE.MeshPhongMaterial();
-        //var planetMat = new THREE.MeshBasicMaterial({color: 0xffffff});
         var TextureLoader = new THREE.TextureLoader(manager);
         TextureLoader.load('img/marble.jpg', function (texture) {
             texture.anisotropy = 8;
             planetMat.map = texture;
-			planetMat.specular = new THREE.Color('grey');
 			planetMat.shininess = 0;
             planetMat.needsUpdate = false;
         });
-		/*TextureLoader.load('img/spec.png', function (texture) {
-            texture.anisotropy = 8;
-            planetMat.specularMap = texture;
-			planetMat.specular = new THREE.Color('grey');
-            planetMat.needsUpdate = false;
-        });*/
         var outlineMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
         var outlineMesh = new THREE.Mesh(planet, outlineMaterial);
-        outlineMesh.scale.multiplyScalar(1.004);
+        outlineMesh.scale.multiplyScalar(1.003);
         var planetMesh = new THREE.Mesh(planet, planetMat);
         planetMesh.add(outlineMesh);
 		planetMesh.name = "globe";
@@ -337,10 +329,25 @@
 		var starsMesh = new THREE.Mesh(stars, starsMat);
 		scene.add(starsMesh);
 		
-		scene.add(new THREE.AmbientLight(0x444444));
+		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
+		//to act as the sun.
+		scene.add(new THREE.AmbientLight(0x333333));
+		light = new THREE.DirectionalLight(0xffffff, 2);
 		
-		light = new THREE.DirectionalLight(0xcccccc, 1.3);
-		light.position.set(15,0,0);
+		// I don't know why you have to subtract a month off, but you do in order to get the
+		//correct date. You also need to subtract 6 hours in order to get the correct UTC time
+		var d = new Date(rawSatData[0].year, rawSatData[0].month - 1, 
+		rawSatData[0].day, rawSatData[0].hour - 6, rawSatData[0].minute - 1);
+		satTime = d = d.getTime();
+		
+		var currentTime = Date.now();
+		var timeDiff = Math.floor((currentTime-d)/60000);
+		var vec = new THREE.Vector3(sunPos[700].x,sunPos[700].y,sunPos[700].z);
+		console.log(vec);
+		//positions the directional light so it is above the same point on the earth as the sun
+		light.position.copy(vec);
+		light.shadow.mapSize.width = 100;
+		light.shadow.mapSize.height = 100;
 		light.castShadow = true;
 		scene.add(light);
 		//planet.rotateX((-23.4 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
@@ -395,13 +402,8 @@
 				//this just grabs the first element of the time array and spits out timeDiff, which
 				// is the index of the next orbital point from where we currently are
 				if (i == 0 && j == 0) {
-					// I don't know why you have to subtract a month off, but you do in order to get the
-					//correct date. You also need to subtract 6 hours in order to get the correct UTC time
-					var d = new Date(rawSatData[index].year, rawSatData[index].month - 1, 
-					rawSatData[index].day, rawSatData[index].hour - 6, rawSatData[index].minute - 1);
-					satTime = d = d.getTime();
 					var currentTime = Date.now();
-					timeDiff = Math.floor((currentTime-d)/60000);
+					timeDiff = Math.floor((currentTime-satTime)/60000);
 				}
 
 				r = ((rawSatData[index].elevation+6378)*10/6378);
@@ -422,8 +424,7 @@
 				
 				if (j == timeDiff - 1) {
 					//this adds the satellite sprites at the location on each path where the satellite
-					//should be in real time. I kind of manually moved the location by subtracting 1 from
-					// the timeDiff index, as that seemed to correctly place the satellite sprite.
+					//should be in real time.
 					if (satName == "ISS (ZARYA)") {
 						var spriteMap = new THREE.TextureLoader().load( 'img/iss1.png' );
 						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
@@ -500,13 +501,13 @@
         var intersects = raycaster.intersectObjects(scene.children);
         //only first intersect
         if (intersects.length != 0) {
-            if (intersects[0].object.type == "Line") {
-                intersects[0].object.material.opacity = 1.0;
-            }
-			else if (intersects[0].object.type == "Sprite") {
-                //console.log(intersects[0].object.name);
-            }
-			else {
+			if (mouse.x > -.68) {
+				if (intersects[0].object.type == "Line") {
+					intersects[0].object.material.opacity = 1.0;
+				}
+				else if (intersects[0].object.type == "Sprite") {
+					//console.log(intersects[0].object.name);
+				}
 			}
         }
     }
@@ -521,6 +522,17 @@
         }
         renderer.render(scene, camera);
     }
+	
+	d3.csv('data/sun.csv', function (d) {
+        return {
+			// in three.js, the y axis is vertical. To compensate, the y and z axes needed to be switched
+			x: +d.x,
+			z: +d.y,
+			y: +d.z
+        };
+    }, function (data) {
+        sunPos = data.slice(); //copy 
+    });
 	
 	d3.csv('data/groundData.csv', function (d) {
         return {
@@ -577,31 +589,37 @@
     });
 	
 	document.querySelector('#gsAll').onclick = function (ev) {
-		checkAll(ev.target.checked, 'gsCheck');
+		try{checkAll(ev.target.checked, 'gsCheck');}
+		catch(e) {}
 	}
 	document.querySelector('#gsAll').onkeyup = function (ev) {
-		ev.preventDefault();
+		try{ev.preventDefault();}
+		catch(e) {}
 	}
 	document.querySelector('#listgs').onclick = function (ev) {
-		checkClick(ev.target.name,ev.target.checked,'gsCheck');
+		try{checkClick(ev.target.name,ev.target.checked,'gsCheck');}
+		catch(e) {}
 	}
 	document.querySelector('#listgs').onkeyup = function (ev) {
-		ev.preventDefault();
+		try{ev.preventDefault();}
+		catch(e) {}
 	}
 	document.querySelector('#allCheck').onclick = function (ev) {
-		checkAll(ev.target.checked, 'spacecraftCheck');
+		try{checkAll(ev.target.checked, 'spacecraftCheck');}
+		catch(e) {}
 	}
 	document.querySelector('#allCheck').onkeyup = function (ev) {
-		ev.preventDefault();
+		try{ev.preventDefault();}
+		catch(e) {}
 	}
 	document.querySelector('#listCraft').onclick = function (ev) {
-		checkClick(ev.target.name,ev.target.checked,'spacecraftCheck');
+		try{checkClick(ev.target.name,ev.target.checked,'spacecraftCheck');}
+		catch(e) {}
 	}
 	document.querySelector('#listCraft').onkeyup = function (ev) {
-		ev.preventDefault();
+		try{ev.preventDefault();}
+		catch(e) {}
 	}
-	
-	
 	
 	window.addEventListener("keydown", function(e) {
 			// space and arrow keys
@@ -610,18 +628,23 @@
 			}
 		}, false);
 	window.addEventListener( 'resize', function (){
-		camera.aspect = window.innerWidth/.8/window.innerHeight;
-		camera.updateProjectionMatrix();
-		renderer.setSize(window.innerWidth/.8,window.innerHeight);
+		try{
+			camera.aspect = window.innerWidth/.8/window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth/.8,window.innerHeight);
+		}
+		catch(e) {}
 	}, false );
 	window.addEventListener('mousemove', function (ev) {
-        // calculate mouse position in normalized device coordinates
-        // (-1 to +1) for both components
-        mouse.x = (ev.clientX / sceneW) * 2 - 1;
-        mouse.y = -(ev.clientY / windowH) * 2 + 1;
+		try{
+			// calculate mouse position in normalized device coordinates
+			// (-1 to +1) for both components
+			mouse.x = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
+			mouse.y = - ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;
+		}
+        catch(e) {}
     }, false);
 	
-
 	document.addEventListener( 'click', function(ev) {
 		raycaster.setFromCamera(mouse, camera);
 		for (var i = 1; i < scene.children.length; i++) {
@@ -632,30 +655,24 @@
 		}
 		//calculate objects intersecting the picking ray
 		var intersects = raycaster.intersectObjects(scene.children);
-		//only first intersect
-		if (intersects.length != 0) {
-			if (intersects[0].object.type == "Line") {
-				if (intersects[0].object.material.opacity == 1.0) {
-					intersects[0].object.material.opacity = 0.4;
-					clickedObj = null;
+		if (mouse.x > -.68) {
+			//only first intersect
+			if (intersects.length != 0) {
+				if (intersects[0].object.type == "Line") {
+					if (intersects[0].object.material.opacity == 1.0) {
+						intersects[0].object.material.opacity = 0.4;
+						clickedObj = null;
+					}
+					else {
+					intersects[0].object.material.opacity = 1.0;
+					clickedObj = intersects[0].object.name;
+					}	
 				}
-				else {
-				intersects[0].object.material.opacity = 1.0;
-				clickedObj = intersects[0].object.name;
-				}	
+				else if (intersects[0].object.type == "Sprite") {
+					console.log(intersects[0].object.name, "sprite");
+				}
 			}
-			else if (intersects[0].object.type == "Sprite") {
-				console.log(intersects[0].object.name, "sprite");
-			}
-			document.addEventListener("drag", function (moved) {
-				moved = true;
-			}, false);
 		}
-		/*else if (mouse.x < .56 && mouse.y < .9) {
-			if (mouse.x > -.68) {
-				clickedObj = null;
-			}
-		}*/
 	}, false);
 	document.addEventListener('visibilitychange', function () {
 	  if (!document.hidden) {
@@ -667,6 +684,9 @@
 				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
 				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;
 			}
+			light.position.x = sunPos[timeDiff - 1].x;
+			light.position.y = sunPos[timeDiff - 1].y;
+			light.position.z = sunPos[timeDiff - 1].z;
 		}
 	}, false);
 
