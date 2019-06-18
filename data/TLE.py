@@ -20,6 +20,9 @@ from pytz import timezone
 #recalculate a 24 hour orbit prediction with the data already grabbed from space-track
 
 
+#possible useful astropy functions: get_sun
+
+
 # get TLE information from CelesTrak stations_url = 'http://celestrak.com/NORAD/elements/stations.txt'
 """satellites = load.tle(stations_url)
 # for the following line, ISS, ZARYA, or ISS (ZARYA) can be used. Some spacecraft have multiple keys (names) that can be used
@@ -106,6 +109,7 @@ fl = 'spacecraft.txt'
 # loads a dictionary of spacecraft TLEs and other relevant information
 satellites = load.tle(fl)
 d = timeNow.utcnow()
+print(d)
 
 fl = "groundData.csv"
 f = open(fl, "w+")
@@ -179,7 +183,6 @@ minutes = range(m*hr)
 fl = "satelliteData.csv"
 # creates a list of times for each minute of the above minutes list
 t = ts.utc(d.year, d.month, d.day, d.hour + (d.minute / 60), minutes)
-print(t)
 mountain = timezone('US/Mountain')
 for craft in spacecraftNames:
 	# grabs a spacecraft by its name from the dictionary, removing the \n
@@ -272,7 +275,7 @@ for craft in spacecraftNames:
 			file.write(str(int(above_horizon15[i])) + ',')
 			file.write('\n')
 
-planets = load('de421.bsp')
+"""planets = load('de421.bsp')
 earth = planets['earth']
 point = earth + Topos('0 N','0 E')
 sun = planets['sun']
@@ -285,4 +288,4 @@ with open(fl, 'w') as file:
 		a = point.at(tTime).observe(sun).apparent()
 		for pos in a.position.km:
 			file.write(str((pos)/1000000) + ',')
-		file.write('\n')
+		file.write('\n')"""
