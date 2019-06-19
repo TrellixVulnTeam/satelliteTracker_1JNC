@@ -275,17 +275,29 @@ for craft in spacecraftNames:
 			file.write(str(int(above_horizon15[i])) + ',')
 			file.write('\n')
 
-"""planets = load('de421.bsp')
+planets = load('de421.bsp')
 earth = planets['earth']
-point = earth + Topos('0 N','0 E')
+point = earth + Topos('0 N', '0 E', None, None, -6378136)
 sun = planets['sun']
 fl = 'sun.csv'
 with open(fl, 'w') as file:
-	file.write('x,')
-	file.write('y,')
-	file.write('z,\n')
+	file.write('lat,')
+	file.write('lon,\n')
 	for tTime in t:
-		a = point.at(tTime).observe(sun).apparent()
-		for pos in a.position.km:
-			file.write(str((pos)/1000000) + ',')
-		file.write('\n')"""
+		alt, az, dis = point.at(tTime).observe(sun).apparent().altaz()
+		if float(az.degrees) < 90.0 and float(az.degrees) > 270.0:
+			alt = 90.0-abs(float(alt.degrees))
+		else:
+			alt = -90.0 + abs(float(alt.degrees))
+		if float(az.degrees) < 90.0:
+			az = 90.0-float(az.degrees)
+		elif float(az.degrees) < 180.0:
+			az = (float(az.degrees)-90.0)*-1.0
+		else:
+			az = float(az.degrees) - 270.0
+		file.write(str(az) + ',')
+		file.write(str(alt) + ',\n')
+		lat = az
+		lon = alt
+		print(lat, lon)
+		print()

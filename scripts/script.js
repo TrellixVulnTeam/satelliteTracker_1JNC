@@ -15,7 +15,9 @@
 	var spacecraft = []; //an array of the names of the satellites (for ease of use across multiple functions)
 	var satTime; // the first datetime in the satellite data. Used to calculate an index in updateSat() and visibilitychange eventlistener
 	var sites = []; //the array holding all the groundsite data after parsing the csv
-	var sunPos = []; //the array holding the position of the sun over a 24 hour period
+	var sunArr = []; //the array holding the position of the sun over a 24 hour period
+	var sunPos = [];
+	var sunSprite;
 	var satDict = {}; // dictionary of satellite paths
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
@@ -40,7 +42,7 @@
         camera.position.z = 22;
 		camera.position.y = 3;
         renderer.shadowMap.enabled = true;
-		renderer.shadowMapSoft = true;
+		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         manager = new THREE.LoadingManager();
         manager.onLoad = function () {openSideBar();render();};
     } 
@@ -109,10 +111,12 @@
 	//this function moves the directional light around the earth to show which parts of the earth
 	//are currently lit by the sun in real time
 	function updateLight() {
-		angle += 0.00000023148; // this will be add
-		light.position.x = 20*Math.sin(-angle);
-		light.position.z = 20*Math.cos(angle);
-		//light.position.y = 20*Math.sin(-angle);
+		var divisor = 3500;
+		var d = Date.now();
+		var timeDiff = Math.floor((d-satTime)/60000);
+		light.position.x += sunPos[timeDiff].x/divisor;
+		light.position.y += sunPos[timeDiff].y/divisor;
+		light.position.z += sunPos[timeDiff].z/divisor;
 	}
 	
 	function searchBox(k, boxes) {
@@ -349,8 +353,37 @@
 		var currentTime = Date.now();
 		var timeDiff = Math.floor((currentTime-d)/60000);
 		//positions the directional light so it is above the same point on the earth as the sun
-		light.position.set(0,0,20);
+		var r, lat, lon, x, y, z;
+		r = 20;
+		for (var i = 0; i < 1440; i++) {
+			lat = sunArr[i].lat;
+			lon = sunArr[i].lon;
+			var phi = (90-lat)*(Math.PI/180);
+			var theta = (lon+180)*(Math.PI/180);
+
+			x = -((r) * Math.sin(phi)*Math.cos(theta));
+			z = ((r) * Math.sin(phi)*Math.sin(theta));
+			y = ((r) * Math.cos(phi));
+			var vert = new THREE.Vector3(x, y, z);
+			sunPos.push(vert);
+			if (i == timeDiff) {
+				light.position.set(x,y,z);
+				/*var spriteMap = new THREE.TextureLoader().load( 'img/sun.png' );
+				var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
+				sunSprite = new THREE.Sprite( spriteMaterial);
+				mul = 10.2/20;
+				x *= mul;
+				y *= mul;
+				z *= mul;
+				sunSprite.position.set(x,y,z);
+				sunSprite.scale.set(.25, .25, 1);
+				scene.add(sunSprite);*/
+			}
+		}
 		light.castShadow = true;
+		light.shadow.bias = 0.0001;
+		light.shadow.mapSize.width = 8192;
+		light.shadow.mapSize.height = 8192;
 		scene.add(light);
 		//planet.rotateX((-23.5 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
     }
@@ -528,12 +561,12 @@
 	d3.csv('data/sun.csv', function (d) {
         return {
 			// in three.js, the y axis is vertical. To compensate, the y and z axes needed to be switched
-			x: +d.x,
-			z: +d.y,
+			lat: +d.lat,
+			lon: +d.lon,
 			y: +d.z
         };
     }, function (data) {
-        sunPos = data.slice(); //copy 
+        sunArr = data.slice(); //copy 
     });
 	
 	d3.csv('data/groundData.csv', function (d) {
