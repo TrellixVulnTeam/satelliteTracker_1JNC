@@ -53,7 +53,7 @@
         controls.autoRotateSpeed = 0.04;
         controls.rotateSpeed = 0.2;
         controls.enableDamping = true;
-        controls.dampingFactor = 0.3;
+        controls.dampingFactor = 0.6;
         controls.enablePan = false;
 		controls.minDistance = 20.5;
 		controls.maxDistance = 850;
@@ -341,7 +341,7 @@
 		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
 		//to act as the sun.
 		scene.add(new THREE.AmbientLight(0x202020));
-		light = new THREE.DirectionalLight(0xffffff, 1.5);
+		light = new THREE.DirectionalLight(0xffffff, 1.8);
 		
 		// I don't know why you have to subtract a month off, but you do in order to get the
 		//correct date. You also need to subtract 6 hours in order to get the correct UTC time
@@ -564,7 +564,6 @@
 			// in three.js, the y axis is vertical. To compensate, the y and z axes needed to be switched
 			lat: +d.lat,
 			lon: +d.lon,
-			y: +d.z
         };
     }, function (data) {
         sunArr = data.slice(); //copy 
