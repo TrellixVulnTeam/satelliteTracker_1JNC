@@ -20,7 +20,8 @@ from pytz import timezone
 #recalculate a 24 hour orbit prediction with the data already grabbed from space-track
 
 
-#possible useful astropy functions: get_sun
+#either use numba or numpy vectorization
+#https://towardsdatascience.com/speed-up-your-algorithms-part-2-numba-293e554c5cc1
 
 
 # get TLE information from CelesTrak stations_url = 'http://celestrak.com/NORAD/elements/stations.txt'
@@ -109,7 +110,6 @@ fl = 'spacecraft.txt'
 # loads a dictionary of spacecraft TLEs and other relevant information
 satellites = load.tle(fl)
 d = timeNow.utcnow()
-print(d)
 
 fl = "groundData.csv"
 f = open(fl, "w+")
@@ -277,7 +277,7 @@ for craft in spacecraftNames:
 
 planets = load('de421.bsp')
 earth = planets['earth']
-point = earth + Topos('0 N', '0 E', None, None, -6378136)
+point = earth + Topos('90 N', '0 E', None, None, -6378136)
 sun = planets['sun']
 fl = 'sun.csv'
 with open(fl, 'w') as file:
@@ -285,19 +285,10 @@ with open(fl, 'w') as file:
 	file.write('lon,\n')
 	for tTime in t:
 		alt, az, dis = point.at(tTime).observe(sun).apparent().altaz()
-		if float(az.degrees) < 90.0 and float(az.degrees) > 270.0:
-			alt = 90.0-abs(float(alt.degrees))
-		else:
-			alt = -90.0 + abs(float(alt.degrees))
-		if float(az.degrees) < 90.0:
-			az = 90.0-float(az.degrees)
-		elif float(az.degrees) < 180.0:
-			az = (float(az.degrees)-90.0)*-1.0
-		else:
-			az = float(az.degrees) - 270.0
-		file.write(str(az) + ',')
-		file.write(str(alt) + ',\n')
-		lat = az
-		lon = alt
+		az = 180-az.degrees
+		file.write(str(alt.degrees) + ',')
+		file.write(str(az) + ',\n')
+		lat = alt
+		lon = az.degrees
 		print(lat, lon)
 		print()

@@ -22,7 +22,6 @@
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
 	var clickedObj = null; // the line that is currently clicked
-	var angle = 0;
 	
 	
 	
@@ -89,8 +88,8 @@
 	//the following function moves the satellites along the path in real time
 	function updateSat() {
 		var d = Date.now();
-		//the divisor variable is set to 3600 because we expect the whole thing to run at about 3600/60 = 60 fps
-		var divisor = 3500;
+		//the divisor variable is set to 3600 because we expect the whole thing to run at about 3300/60 = 55 fps
+		var divisor = 3300;
 		//this gives us the index of the orbital point we are headed towards
 		var timeDiff = Math.floor((d-satTime)/60000);
 		for ( var i = 0; i < numCraft; i++) {
@@ -111,7 +110,7 @@
 	//this function moves the directional light around the earth to show which parts of the earth
 	//are currently lit by the sun in real time
 	function updateLight() {
-		var divisor = 3500;
+		var divisor = 3300;
 		var d = Date.now();
 		var timeDiff = Math.floor((d-satTime)/60000);
 		light.position.x += sunPos[timeDiff].x/divisor;
@@ -341,8 +340,8 @@
 		
 		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
 		//to act as the sun.
-		scene.add(new THREE.AmbientLight(0x343434));
-		light = new THREE.DirectionalLight(0xcccccc, 1.5);
+		scene.add(new THREE.AmbientLight(0x202020));
+		light = new THREE.DirectionalLight(0xffffff, 1.5);
 		
 		// I don't know why you have to subtract a month off, but you do in order to get the
 		//correct date. You also need to subtract 6 hours in order to get the correct UTC time
@@ -368,22 +367,24 @@
 			sunPos.push(vert);
 			if (i == timeDiff) {
 				light.position.set(x,y,z);
-				/*var spriteMap = new THREE.TextureLoader().load( 'img/sun.png' );
+				var spriteMap = new THREE.TextureLoader().load( 'img/sun.png' );
 				var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
 				sunSprite = new THREE.Sprite( spriteMaterial);
-				mul = 10.2/20;
+				mul = 10.1/20;
 				x *= mul;
 				y *= mul;
 				z *= mul;
 				sunSprite.position.set(x,y,z);
 				sunSprite.scale.set(.25, .25, 1);
-				scene.add(sunSprite);*/
+				scene.add(sunSprite);
 			}
 		}
 		light.castShadow = true;
-		light.shadow.bias = 0.0001;
+		/*
+		light.shadow.bias = 0.000001;
 		light.shadow.mapSize.width = 8192;
 		light.shadow.mapSize.height = 8192;
+		*/
 		scene.add(light);
 		//planet.rotateX((-23.5 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
     }
@@ -720,8 +721,9 @@
 				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
 				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;
 			}
-			light.position.x = 20*Math.sin(-angle);
-			light.position.z = 20*Math.cos(angle);
+			light.position.x = sunPos[timeDiff].x;
+			light.position.y = sunPos[timeDiff].y;
+			light.position.z = sunPos[timeDiff].z;
 		}
 	}, false);
 
