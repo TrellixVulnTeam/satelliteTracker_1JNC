@@ -23,13 +23,6 @@
 	var groundSites = {}; // dictionary of groundsite markers
 	var clickedObj = null; // the line that is currently clicked
 	
-	
-	
-	
-	
-	
-	//the globe is currently tilted by 23.5 degrees, so the satellite paths won't match up unless that is changed back
-	
      // Three.js setup procedure
     function setupScene() {
         scene = new THREE.Scene();
@@ -39,7 +32,7 @@
         renderer.setClearColor(0x000000, 1);
         camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 4000);
         camera.position.z = 22;
-		camera.position.y = 3;
+		camera.position.y = 0;
         renderer.shadowMap.enabled = true;
 		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         manager = new THREE.LoadingManager();
@@ -341,7 +334,7 @@
 		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
 		//to act as the sun.
 		scene.add(new THREE.AmbientLight(0x202020));
-		light = new THREE.DirectionalLight(0xffffff, 1.8);
+		light = new THREE.DirectionalLight(0xffffff, 1.5);
 		
 		// I don't know why you have to subtract a month off, but you do in order to get the
 		//correct date. You also need to subtract 6 hours in order to get the correct UTC time
@@ -367,26 +360,10 @@
 			sunPos.push(vert);
 			if (i == timeDiff) {
 				light.position.set(x,y,z);
-				var spriteMap = new THREE.TextureLoader().load( 'img/sun.png' );
-				var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
-				sunSprite = new THREE.Sprite( spriteMaterial);
-				mul = 10.1/20;
-				x *= mul;
-				y *= mul;
-				z *= mul;
-				sunSprite.position.set(x,y,z);
-				sunSprite.scale.set(.25, .25, 1);
-				scene.add(sunSprite);
 			}
 		}
 		light.castShadow = true;
-		/*
-		light.shadow.bias = 0.000001;
-		light.shadow.mapSize.width = 8192;
-		light.shadow.mapSize.height = 8192;
-		*/
 		scene.add(light);
-		//planet.rotateX((-23.5 * Math.PI) / 180); //use this to rotate the globe so the poles are where they are in reality
     }
 	
 	function groundSite() {
@@ -417,7 +394,7 @@
 	function satPath() {
 		//number of spacecraft to be shown
 		numCraft = rawSatData.length/numOrbitalPts;
-		var r, lat, lon, x, y, z;
+		var r, lat, lon, x, y, z, phi, theta;
 		var timeDiff;
 		for (var i = 0; i < numCraft; i++) {
 			var material = new THREE.LineBasicMaterial({color: 0xffffff, vertexColors: THREE.VertexColors, transparent: true});
@@ -445,8 +422,8 @@
 				r = ((rawSatData[index].elevation+6378)*10/6378);
 				lat = rawSatData[index].latitude;
 				lon = rawSatData[index].longitude;
-				var phi = (90-lat)*(Math.PI/180);
-				var theta = (lon+180)*(Math.PI/180);
+				phi = (90-lat)*(Math.PI/180);
+				theta = (lon+180)*(Math.PI/180);
 
 				x = -((r) * Math.sin(phi)*Math.cos(theta));
 				z = ((r) * Math.sin(phi)*Math.sin(theta));
@@ -458,7 +435,7 @@
 				geometry.vertices.push(vert);
 				prev = current;
 				
-				if (j == timeDiff - 1) {
+				if (j == timeDiff) {
 					//this adds the satellite sprites at the location on each path where the satellite
 					//should be in real time.
 					if (satName == "ISS (ZARYA)") {
@@ -716,9 +693,9 @@
 			var timeDiff = Math.floor((d-satTime)/60000);
 			for ( var i = 0; i < numCraft; i++) {
 				var satName = rawSatData[i*numOrbitalPts].name;
-				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff-1].x;
-				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff-1].y;
-				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff-1].z;
+				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff].x;
+				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff].y;
+				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff].z;
 			}
 			light.position.x = sunPos[timeDiff].x;
 			light.position.y = sunPos[timeDiff].y;

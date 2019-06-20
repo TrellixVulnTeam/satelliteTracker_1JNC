@@ -288,7 +288,4 @@ with open(fl, 'w') as file:
 		az = 180-az.degrees
 		file.write(str(alt.degrees) + ',')
 		file.write(str(az) + ',\n')
-		lat = alt
-		lon = az.degrees
-		print(lat, lon)
-		print()
+		print(alt.degrees, az)
