@@ -16,8 +16,9 @@
 	var satTime; // the first datetime in the satellite data. Used to calculate an index in updateSat() and visibilitychange eventlistener
 	var sites = []; //the array holding all the groundsite data after parsing the csv
 	var sunArr = []; //the array holding the position of the sun over a 24 hour period
-	var sunPos = [];
+	var sunPos = []; //the array of x,y,z positions for the light representing the sun
 	var sunSprite;
+	var mul = 10.1/20;
 	var satDict = {}; // dictionary of satellite paths
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
@@ -78,37 +79,33 @@
 		$('body').addClass('loaded');
 	}
 	
-	//the following function moves the satellites along the path in real time
-	function updateSat() {
+	//the following function moves the satellites and light along their paths in real time
+	function updateOrbits() {
 		var d = Date.now();
-		//the divisor variable is set to 3600 because we expect the whole thing to run at about 3300/60 = 55 fps
-		var divisor = 3300;
 		//this gives us the index of the orbital point we are headed towards
-		var timeDiff = Math.floor((d-satTime)/60000);
+		var timeDiff = Math.floor((d-satTime)/60000)-1;
+		//minuteFraction is how far into the current minute we are. It is used to calculate the updated satellite position.
+		var minuteFraction = ((d-satTime)/60000 - timeDiff);
 		for ( var i = 0; i < numCraft; i++) {
 			var satName = rawSatData[i*numOrbitalPts].name;
-			// updates the position of the satellite to be be an addition 1/3600closer to the next orbital point.
-			// this will mean that the satellite doesn't move at the same speed all the time.	
-			satImg[satName].position.x+= (satDict[satName].geometry.vertices[timeDiff].x - satImg[satName].position.x)/divisor;
-			satImg[satName].position.y+= (satDict[satName].geometry.vertices[timeDiff].y - satImg[satName].position.y)/divisor;
-			satImg[satName].position.z+= (satDict[satName].geometry.vertices[timeDiff].z - satImg[satName].position.z)/divisor;
+			
+			//this gets the next position in the satDict library, subtracts current position, and multiplies by minuteFraction
+			//before adding that value back to the current position. That gives us the correct position at the current time.
+			satImg[satName].position.x = ((satDict[satName].geometry.vertices[timeDiff-1].x-satDict[satName].geometry.vertices[timeDiff-2].x)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-2].x);
+			satImg[satName].position.y = ((satDict[satName].geometry.vertices[timeDiff-1].y-satDict[satName].geometry.vertices[timeDiff-2].y)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-2].y);
+			satImg[satName].position.z = ((satDict[satName].geometry.vertices[timeDiff-1].z-satDict[satName].geometry.vertices[timeDiff-2].z)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-2].z);
 			if (satName != "ISS ZARYA") {
 				var r = ((rawSatData[i*numOrbitalPts].elevation+6378)*10/6378)/12;
 				if (r > 10) r = 10;
 				satImg[satName].scale = (r, r, 1);
 			}
 		}
-	}
-	
-	//this function moves the directional light around the earth to show which parts of the earth
-	//are currently lit by the sun in real time
-	function updateLight() {
-		var divisor = 3300;
-		var d = Date.now();
-		var timeDiff = Math.floor((d-satTime)/60000);
-		light.position.x += sunPos[timeDiff].x/divisor;
-		light.position.y += sunPos[timeDiff].y/divisor;
-		light.position.z += sunPos[timeDiff].z/divisor;
+		light.position.x = (sunPos[timeDiff].x - sunPos[timeDiff-1].x)*minuteFraction + sunPos[timeDiff-1].x;
+		light.position.y = (sunPos[timeDiff].y - sunPos[timeDiff-1].y)*minuteFraction + sunPos[timeDiff-1].y;
+		light.position.z = (sunPos[timeDiff].z - sunPos[timeDiff-1].z)*minuteFraction + sunPos[timeDiff-1].z;
+		sunSprite.position.x = light.position.x*mul;
+		sunSprite.position.y = light.position.y*mul;
+		sunSprite.position.z = light.position.z*mul;
 	}
 	
 	function searchBox(k, boxes) {
@@ -228,7 +225,7 @@
 		}
 	}
 	
-	function checkClick(name, check, cl) {
+	function checkboxClick(name, check, cl) {
 		var allButton;
 		if (cl == 'spacecraftCheck') {
 			var sat = satDict[name];
@@ -343,7 +340,7 @@
 		satTime = d = d.getTime();
 		
 		var currentTime = Date.now();
-		var timeDiff = Math.floor((currentTime-d)/60000);
+		var timeDiff = Math.floor((currentTime-d)/60000) - 1;
 		//positions the directional light so it is above the same point on the earth as the sun
 		var r, lat, lon, x, y, z;
 		r = 20;
@@ -360,6 +357,15 @@
 			sunPos.push(vert);
 			if (i == timeDiff) {
 				light.position.set(x,y,z);
+				var spriteMap = new THREE.TextureLoader().load( 'img/sun.png' );
+				var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
+				sunSprite = new THREE.Sprite( spriteMaterial);
+				x *= mul;
+				y *= mul;
+				z *= mul;
+				sunSprite.position.set(x,y,z);
+				sunSprite.scale.set(.25, .25, 1);
+				scene.add(sunSprite);
 			}
 		}
 		light.castShadow = true;
@@ -435,7 +441,7 @@
 				geometry.vertices.push(vert);
 				prev = current;
 				
-				if (j == timeDiff) {
+				if (j == timeDiff-1) {
 					//this adds the satellite sprites at the location on each path where the satellite
 					//should be in real time.
 					if (satName == "ISS (ZARYA)") {
@@ -527,8 +533,7 @@
 	
     function render() {
         requestAnimationFrame(render);
-		updateSat();
-		updateLight();
+		updateOrbits();
         controls.update();
         if (mouse.x < sceneW) {
             checkForRaycasts();
@@ -609,7 +614,7 @@
 		catch(e) {}
 	}
 	document.querySelector('#listgs').onclick = function (ev) {
-		try{checkClick(ev.target.name,ev.target.checked,'gsCheck');}
+		try{checkboxClick(ev.target.name,ev.target.checked,'gsCheck');}
 		catch(e) {}
 	}
 	document.querySelector('#listgs').onkeyup = function (ev) {
@@ -625,7 +630,7 @@
 		catch(e) {}
 	}
 	document.querySelector('#listCraft').onclick = function (ev) {
-		try{checkClick(ev.target.name,ev.target.checked,'spacecraftCheck');}
+		try{checkboxClick(ev.target.name,ev.target.checked,'spacecraftCheck');}
 		catch(e) {}
 	}
 	document.querySelector('#listCraft').onkeyup = function (ev) {
@@ -633,31 +638,6 @@
 		catch(e) {}
 	}
 	
-	window.addEventListener("keydown", function(e) {
-			// space and arrow keys
-			if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-				e.preventDefault();
-			}
-		}, false);
-	window.addEventListener( 'resize', function (){
-		try{
-			camera.aspect = window.innerWidth/.8/window.innerHeight;
-			camera.updateProjectionMatrix();
-			renderer.setSize(window.innerWidth/.8,window.innerHeight);
-		}
-		catch(e) {}
-	}, false );
-	window.addEventListener('mousemove', function (ev) {
-		try{
-			// calculate mouse position in normalized device coordinates
-			// (-1 to +1) for both components
-			mouse.x = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
-			mouse.y = - ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;
-		}
-        catch(e) {}
-    }, false);
-	
-
 	document.addEventListener( 'click', function(ev) {
 		raycaster.setFromCamera(mouse, camera);
 		for (var i = 1; i < scene.children.length; i++) {
@@ -687,20 +667,29 @@
 			}
 		}
 	}, false);
-	document.addEventListener('visibilitychange', function () {
-	  if (!document.hidden) {
-		  var d = Date.now();
-			var timeDiff = Math.floor((d-satTime)/60000);
-			for ( var i = 0; i < numCraft; i++) {
-				var satName = rawSatData[i*numOrbitalPts].name;
-				satImg[satName].position.x = satDict[satName].geometry.vertices[timeDiff].x;
-				satImg[satName].position.y = satDict[satName].geometry.vertices[timeDiff].y;
-				satImg[satName].position.z = satDict[satName].geometry.vertices[timeDiff].z;
+	
+	window.addEventListener("keydown", function(e) {
+			// space and arrow keys
+			if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+				e.preventDefault();
 			}
-			light.position.x = sunPos[timeDiff].x;
-			light.position.y = sunPos[timeDiff].y;
-			light.position.z = sunPos[timeDiff].z;
+		}, false);
+	window.addEventListener( 'resize', function (){
+		try{
+			camera.aspect = window.innerWidth/.8/window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth/.8,window.innerHeight);
 		}
-	}, false);
-
+		catch(e) {}
+	}, false );
+	window.addEventListener('mousemove', function (ev) {
+		try{
+			// calculate mouse position in normalized device coordinates
+			// (-1 to +1) for both components
+			mouse.x = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
+			mouse.y = - ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;
+		}
+        catch(e) {}
+    }, false);
+	
 })(window, document);
