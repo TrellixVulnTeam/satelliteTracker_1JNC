@@ -331,7 +331,7 @@
 		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
 		//to act as the sun.
 		scene.add(new THREE.AmbientLight(0x202020));
-		light = new THREE.DirectionalLight(0xffffff, 1.5);
+		light = new THREE.DirectionalLight(0xffffff, 1.7);
 		
 		// I don't know why you have to subtract a month off, but you do in order to get the
 		//correct date. You also need to subtract 6 hours in order to get the correct UTC time
