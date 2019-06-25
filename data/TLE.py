@@ -276,9 +276,8 @@ for craft in spacecraftNames:
 			file.write('\n')
 
 planets = load('de421.bsp')
-earth = planets['earth']
+earth, sun, moon = planets['earth'], planets['sun'], planets['moon']
 point = earth + Topos('90 N', '0 E', None, None, -6378136)
-sun = planets['sun']
 fl = 'sun.csv'
 with open(fl, 'w') as file:
 	file.write('lat,')
@@ -288,4 +287,3 @@ with open(fl, 'w') as file:
 		az = 180-az.degrees
 		file.write(str(alt.degrees) + ',')
 		file.write(str(az) + ',\n')
-		print(alt.degrees, az)

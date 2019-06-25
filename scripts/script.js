@@ -1,6 +1,6 @@
 (function (window, document, undefined) {
     var canvas;
-    var scene, camera, renderer, controls, manager, light;
+    var scene, camera, renderer, controls, manager, light, moon;
     var windowW = window.innerWidth;
     var sceneW = window.innerWidth / .8; //size of the whole screen, adding /.8; after innerWidth moves the globe to the right
     var windowH = window.innerHeight;
@@ -8,6 +8,7 @@
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
 	
+	var center = new THREE.Vector3(0, 0, 0);
     var mouse = new THREE.Vector2();
 	var numCraft; // number of satellites
 	var numOrbitalPts; //number of points for each satellite path
@@ -17,8 +18,11 @@
 	var sites = []; //the array holding all the groundsite data after parsing the csv
 	var sunArr = []; //the array holding the position of the sun over a 24 hour period
 	var sunPos = []; //the array of x,y,z positions for the light representing the sun
+	var moonArr = [];
+	var moonPos = [];
 	var sunSprite;
-	var mul = 10.1/20;
+	var starsMesh;
+	var mul = 10.2/20;
 	var satDict = {}; // dictionary of satellite paths
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
@@ -31,7 +35,7 @@
         renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
         renderer.setSize(sceneW, windowH);
         renderer.setClearColor(0x000000, 1);
-        camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 4000);
+        camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 501000);
         camera.position.z = 22;
 		camera.position.y = 0;
         renderer.shadowMap.enabled = true;
@@ -44,7 +48,7 @@
     function setupControls() {
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.autoRotate = false;
-        controls.autoRotateSpeed = 0.04;
+        controls.autoRotateSpeed = 0.16;
         controls.rotateSpeed = 0.2;
         controls.enableDamping = true;
         controls.dampingFactor = 0.6;
@@ -56,20 +60,20 @@
 	function openSideBar() {
 		setTimeout(function(){
 		document.getElementById("gsTitle").style.width = "20%";
-		document.getElementById("gsTitle").style.height = "20%"
+		document.getElementById("gsTitle").style.height = "16%"
 		document.getElementById("gsTitle").style.top = "0%";
 		document.getElementById("gsTitle").visible = true;
 		document.getElementById("gsnav").style.width = "20%";
 		document.getElementById("gsnav").style.height = "22%"
-		document.getElementById("gsnav").style.top = "14%";
+		document.getElementById("gsnav").style.top = "16%";
 		document.getElementById("gsnav").visible = true;
 		document.getElementById("spacecraftTitle").style.width = "20%";
-		document.getElementById("spacecraftTitle").style.height = "20%"
-		document.getElementById("spacecraftTitle").style.top = "37%";
+		document.getElementById("spacecraftTitle").style.height = "16%"
+		document.getElementById("spacecraftTitle").style.top = "38%";
 		document.getElementById("spacecraftTitle").visible = true;
 		document.getElementById("craftnav").style.width = "20%";
-		document.getElementById("craftnav").style.height = "49%";
-		document.getElementById("craftnav").style.top = "51%";
+		document.getElementById("craftnav").style.height = "48%";
+		document.getElementById("craftnav").style.top = "54%";
 		document.getElementById("craftnav").visible = true;
 		}, 500);
 		setTimeout(function() {
@@ -304,7 +308,7 @@
         var planet = new THREE.SphereGeometry(10, 128, 128);
 		var planetMat = new THREE.MeshPhongMaterial();
         var TextureLoader = new THREE.TextureLoader(manager);
-        TextureLoader.load('img/marble.jpg', function (texture) {
+        TextureLoader.load('img/marble.png', function (texture) {
             texture.anisotropy = 8;
             planetMat.map = texture;
 			planetMat.shininess = 0;
@@ -316,21 +320,37 @@
         var planetMesh = new THREE.Mesh(planet, planetMat);
         planetMesh.add(outlineMesh);
 		planetMesh.name = "globe";
+		planetMesh.castShadow = true;
+		planetMesh.receiveShadow = true;
         scene.add(planetMesh);
 		
-		var stars = new THREE.SphereGeometry(3000, 64, 64);
+		var cloudGeo = new THREE.SphereGeometry(10.1,64,64);
+		var cloudMat = new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: .5});
+		TextureLoader.load('img/clouds.png', function (texture) {
+            texture.anisotropy = 8;
+            cloudMat.map = texture;
+			cloudMat.shininess = 0;
+            cloudMat.needsUpdate = false;
+			
+        });
+		var clouds = new THREE.Mesh(cloudGeo, cloudMat);
+		clouds.castShadow = true;
+		clouds.receiveShadow = true;
+		//scene.add(clouds);
+		
+		var stars = new THREE.SphereGeometry(500000, 64, 64);
 		var starsMat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
-		TextureLoader.load('img/starfield2.png', function (texture) {
+		TextureLoader.load('img/milkyWay.jpg', function (texture) {
 			texture.anisotropy = 8;
 			starsMat.map = texture;
 			starsMat.needsUpdate = false;
 		});
-		var starsMesh = new THREE.Mesh(stars, starsMat);
+		starsMesh = new THREE.Mesh(stars, starsMat);
 		scene.add(starsMesh);
 		
 		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
 		//to act as the sun.
-		scene.add(new THREE.AmbientLight(0x202020));
+		scene.add(new THREE.AmbientLight(0x121212));
 		light = new THREE.DirectionalLight(0xffffff, 1.7);
 		
 		// I don't know why you have to subtract a month off, but you do in order to get the
@@ -368,6 +388,7 @@
 				scene.add(sunSprite);
 			}
 		}
+		light.shadowMapVisible = true;
 		light.castShadow = true;
 		scene.add(light);
     }
@@ -388,7 +409,7 @@
 			//creates an elongated yellow cube to show the location of the groundsite
 			cube.position.set(x, y, z);
 			//rotates the cube to radiate out from the center of the globe
-			cube.lookAt(new THREE.Vector3(0, 0, 0));
+			cube.lookAt(center);
 			cube.visible = false;
 			var gName = sites[i].name;
 			groundSites[gName] = cube;			
@@ -445,7 +466,7 @@
 					//this adds the satellite sprites at the location on each path where the satellite
 					//should be in real time.
 					if (satName == "ISS (ZARYA)") {
-						var spriteMap = new THREE.TextureLoader().load( 'img/iss1.png' );
+						var spriteMap = new THREE.TextureLoader().load( 'img/iss.png' );
 						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
 						var sprite = new THREE.Sprite( spriteMaterial);
 						sprite.scale.set(1, 1, 1);
@@ -454,8 +475,8 @@
 						sprite.visible = false;
 					}
 					else {
-						var imgNum =  Math.floor(Math.random() * 5	) + 1;
-						var imgLoc = 'img/sat' + imgNum + '.png'
+						
+						var imgLoc = 'img/satellite.png';
 						var spriteMap = new THREE.TextureLoader().load( imgLoc );
 						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff} );
 						var sprite = new THREE.Sprite( spriteMaterial );
@@ -540,10 +561,9 @@
         }
         renderer.render(scene, camera);
     }
-	
+		
 	d3.csv('data/sun.csv', function (d) {
         return {
-			// in three.js, the y axis is vertical. To compensate, the y and z axes needed to be switched
 			lat: +d.lat,
 			lon: +d.lon,
         };
