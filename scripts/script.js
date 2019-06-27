@@ -1,15 +1,14 @@
 (function (window, document, undefined) {
     var canvas;
-    var scene, camera, renderer, controls, manager, light, moon;
-    var windowW = window.innerWidth;
-    var sceneW = window.innerWidth / .8; //size of the whole screen, adding /.8; after innerWidth moves the globe to the right
-    var windowH = window.innerHeight;
+    var scene, camera, renderer, controls, manager, light;
+    var windowW = window.innerWidth; //size of the whole window
+    var sceneW = window.innerWidth / .83; //size of the scene, dividing innerWidth by .83 moves the globe to the right
+    var windowH = window.innerHeight;//width of the window
 	
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
 	
-	var center = new THREE.Vector3(0, 0, 0);
-    var mouse = new THREE.Vector2();
+    var mouse = new THREE.Vector2(); //used to calculate the current position of the mouse in 2D space
 	var numCraft; // number of satellites
 	var numOrbitalPts; //number of points for each satellite path
 	var rawSatData = []; //the array holding all the satellite data after parsing the csv
@@ -18,11 +17,8 @@
 	var sites = []; //the array holding all the groundsite data after parsing the csv
 	var sunArr = []; //the array holding the position of the sun over a 24 hour period
 	var sunPos = []; //the array of x,y,z positions for the light representing the sun
-	var moonArr = [];
-	var moonPos = [];
-	var sunSprite;
-	var starsMesh;
-	var mul = 10.2/20;
+	//var sunSprite; //sprite used to show the spot on the earth that the sun is directly above. Not currently used
+	//var mul = 10.2/20; //mul is a multiplier to put the sunSprite just above the surface of the globe
 	var satDict = {}; // dictionary of satellite paths
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
@@ -37,7 +33,6 @@
         renderer.setClearColor(0x000000, 1);
         camera = new THREE.PerspectiveCamera(60, sceneW / windowH, 0.5, 501000);
         camera.position.z = 22;
-		camera.position.y = 0;
         renderer.shadowMap.enabled = true;
 		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         manager = new THREE.LoadingManager();
@@ -51,35 +46,38 @@
         controls.autoRotateSpeed = 0.16;
         controls.rotateSpeed = 0.2;
         controls.enableDamping = true;
-        controls.dampingFactor = 0.6;
+        controls.dampingFactor = 0.5;
         controls.enablePan = false;
 		controls.minDistance = 20.5;
-		controls.maxDistance = 850;
+		controls.maxDistance = 1000;
     }	
 	
 	function openSideBar() {
 		setTimeout(function(){
-		document.getElementById("gsTitle").style.width = "20%";
-		document.getElementById("gsTitle").style.height = "16%"
-		document.getElementById("gsTitle").style.top = "0%";
-		document.getElementById("gsTitle").visible = true;
-		document.getElementById("gsnav").style.width = "20%";
-		document.getElementById("gsnav").style.height = "22%"
-		document.getElementById("gsnav").style.top = "16%";
-		document.getElementById("gsnav").visible = true;
-		document.getElementById("spacecraftTitle").style.width = "20%";
-		document.getElementById("spacecraftTitle").style.height = "16%"
-		document.getElementById("spacecraftTitle").style.top = "38%";
-		document.getElementById("spacecraftTitle").visible = true;
-		document.getElementById("craftnav").style.width = "20%";
-		document.getElementById("craftnav").style.height = "48%";
-		document.getElementById("craftnav").style.top = "54%";
-		document.getElementById("craftnav").visible = true;
+			//makes the sidebar with all of the groundsites and spacecraft visible
+			document.getElementById("gsTitle").style.width = "20%";
+			document.getElementById("gsTitle").style.height = "16%"
+			document.getElementById("gsTitle").style.top = "0%";
+			document.getElementById("gsTitle").visible = true;
+			document.getElementById("gsnav").style.width = "20%";
+			document.getElementById("gsnav").style.height = "22%"
+			document.getElementById("gsnav").style.top = "16%";
+			document.getElementById("gsnav").visible = true;
+			document.getElementById("spacecraftTitle").style.width = "20%";
+			document.getElementById("spacecraftTitle").style.height = "16%"
+			document.getElementById("spacecraftTitle").style.top = "38%";
+			document.getElementById("spacecraftTitle").visible = true;
+			document.getElementById("craftnav").style.width = "20%";
+			document.getElementById("craftnav").style.height = "48%";
+			document.getElementById("craftnav").style.top = "54%";
+			document.getElementById("craftnav").visible = true;
 		}, 500);
 		setTimeout(function() {
+			//opens the 'About' section in the upper right part of the screen
 			document.getElementById("check").checked = true;
 			document.getElementById("about").style.opacity = "1";
 		}, 1400);
+		//added the 'loaded' class to the body, getting rid of the loading screen
 		$('body').addClass('loaded');
 	}
 	
@@ -107,11 +105,12 @@
 		light.position.x = (sunPos[timeDiff].x - sunPos[timeDiff-1].x)*minuteFraction + sunPos[timeDiff-1].x;
 		light.position.y = (sunPos[timeDiff].y - sunPos[timeDiff-1].y)*minuteFraction + sunPos[timeDiff-1].y;
 		light.position.z = (sunPos[timeDiff].z - sunPos[timeDiff-1].z)*minuteFraction + sunPos[timeDiff-1].z;
-		sunSprite.position.x = light.position.x*mul;
+		/*sunSprite.position.x = light.position.x*mul;
 		sunSprite.position.y = light.position.y*mul;
-		sunSprite.position.z = light.position.z*mul;
+		sunSprite.position.z = light.position.z*mul;*/
 	}
 	
+	//determines whether a certain groundsite checkbox is checked. Used in the addVisiblePath function
 	function searchBox(k, boxes) {
 		for (var i = 0; i < boxes.length; i++) {
 			if (boxes[i] == k) return true;
@@ -119,6 +118,8 @@
 		return false;
 	}
 	
+	//changes the parts of the satellite paths red that are visible to currently active groundsites.
+	//also changes red sections back to blue for groundsites that are deselected
 	function addVisiblePath(checkboxes) {
 		for (var i = 0; i < numCraft; i++) {
 			var pathColor = 0x0000ff;
@@ -191,6 +192,7 @@
 		}
 	}
 	
+	//used for when the 'All' button is checked for either the GroundSites or Spacecraft section.
 	function checkAll(check, cl) {
 		var checkboxes = document.getElementsByClassName(cl);
 		for (var i = 0; i < checkboxes.length; i++) {
@@ -229,6 +231,7 @@
 		}
 	}
 	
+	//used for when one checkbox is clicked in the GroundSites or Spacecraft sections
 	function checkboxClick(name, check, cl) {
 		var allButton;
 		if (cl == 'spacecraftCheck') {
@@ -259,6 +262,7 @@
 		checkForAllChecked(checkboxes,allButton,cl);
 	}
 
+	//takes the previously checked checkbox, and determines whether all of the checkboxes in that section are checked
 	function checkForAllChecked(checkboxes, buttonName, cl) {
 		var numChecked = 0;
 		var allButton = document.getElementById(buttonName);
@@ -286,6 +290,7 @@
 		}
 	}
 	
+	//creates all of the spacecraft elements of the sidebar
 	function craftList() {
 		var text = "";
 		for (var i = 0; i < spacecraft.length; i++) {
@@ -294,6 +299,7 @@
 		document.getElementById("listCraft").innerHTML = text;
 	}
 	
+	//creates all of the groundsite elements of the sidebar
 	function gsList() {
 		var text = "";
 		
@@ -312,6 +318,7 @@
             texture.anisotropy = 8;
             planetMat.map = texture;
 			planetMat.shininess = 0;
+			planetMat.roughness = 1;
             planetMat.needsUpdate = false;
         });
         var outlineMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
@@ -324,8 +331,8 @@
 		planetMesh.receiveShadow = true;
         scene.add(planetMesh);
 		
-		var cloudGeo = new THREE.SphereGeometry(10.1,64,64);
-		var cloudMat = new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: .5});
+		var cloudGeo = new THREE.SphereGeometry(10.08,64,64);
+		var cloudMat = new THREE.MeshPhongMaterial({color: 0xffffff, transparent: true, opacity: .7});
 		TextureLoader.load('img/clouds.png', function (texture) {
             texture.anisotropy = 8;
             cloudMat.map = texture;
@@ -336,7 +343,7 @@
 		var clouds = new THREE.Mesh(cloudGeo, cloudMat);
 		clouds.castShadow = true;
 		clouds.receiveShadow = true;
-		//scene.add(clouds);
+		scene.add(clouds);
 		
 		var stars = new THREE.SphereGeometry(500000, 64, 64);
 		var starsMat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
@@ -345,13 +352,13 @@
 			starsMat.map = texture;
 			starsMat.needsUpdate = false;
 		});
-		starsMesh = new THREE.Mesh(stars, starsMat);
+		var starsMesh = new THREE.Mesh(stars, starsMat);
 		scene.add(starsMesh);
 		
 		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
 		//to act as the sun.
-		scene.add(new THREE.AmbientLight(0x121212));
-		light = new THREE.DirectionalLight(0xffffff, 1.7);
+		scene.add(new THREE.AmbientLight(0x202020));
+		light = new THREE.DirectionalLight(0xeeeeff, 1.6);
 		
 		// I don't know why you have to subtract a month off, but you do in order to get the
 		//correct date. You also need to subtract 6 hours in order to get the correct UTC time
@@ -377,7 +384,7 @@
 			sunPos.push(vert);
 			if (i == timeDiff) {
 				light.position.set(x,y,z);
-				var spriteMap = new THREE.TextureLoader().load( 'img/sun.png' );
+				/*var spriteMap = new THREE.TextureLoader().load( 'img/sun.png' );
 				var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
 				sunSprite = new THREE.Sprite( spriteMaterial);
 				x *= mul;
@@ -385,7 +392,7 @@
 				z *= mul;
 				sunSprite.position.set(x,y,z);
 				sunSprite.scale.set(.25, .25, 1);
-				scene.add(sunSprite);
+				scene.add(sunSprite);*/
 			}
 		}
 		light.shadowMapVisible = true;
@@ -393,6 +400,7 @@
 		scene.add(light);
     }
 	
+	//creates all of the groundsite markers
 	function groundSite() {
 		var r = 10;
 		for (var i = 0; i < sites.length; i++) {
@@ -409,7 +417,7 @@
 			//creates an elongated yellow cube to show the location of the groundsite
 			cube.position.set(x, y, z);
 			//rotates the cube to radiate out from the center of the globe
-			cube.lookAt(center);
+			cube.lookAt(new THREE.Vector3(0, 0, 0));
 			cube.visible = false;
 			var gName = sites[i].name;
 			groundSites[gName] = cube;			
@@ -512,6 +520,7 @@
 		}
 	}
 	
+	
     function init() {
         
         window.onkeyup = function (e) {
@@ -529,6 +538,7 @@
 		craftList();
     }
 	
+	//checks to see if the mouse is hovering over an element on the canvas
     function checkForRaycasts() {
         raycaster.setFromCamera(mouse, camera);
         for (var i = 1; i < scene.children.length; i++) {
@@ -561,16 +571,19 @@
         }
         renderer.render(scene, camera);
     }
-		
+	
+	//https://d3-wiki.readthedocs.io/zh_CN/master/CSV/
+	//grabs the data regarding the sun's location in a 24 hour period
 	d3.csv('data/sun.csv', function (d) {
         return {
 			lat: +d.lat,
 			lon: +d.lon,
         };
     }, function (data) {
-        sunArr = data.slice(); //copy 
+        sunArr = data.slice(); 
     });
 	
+	//grabs the data regarding the groundsite locations
 	d3.csv('data/groundData.csv', function (d) {
         return {
 			name: d.name,
@@ -578,9 +591,10 @@
 			longitude: +d.lon,
         };
     }, function (data) {
-        sites = data.slice(); //copy 
+        sites = data.slice();
     });
 	
+	//reads in an integer that is the total number of orbital points each satellite path has
 	d3.csv('data/orbitLength.csv', function (d) {
         return {
 			l: +d.len
@@ -590,8 +604,7 @@
 		numOrbitalPts = numOrbitalPts[0].l;
     });
 	
-	// pulls the satellite data from the .csv and populates a list with it
-	//https://d3-wiki.readthedocs.io/zh_CN/master/CSV/
+	//grabs the data regarding each satellite's location at each minute over a 24 hour period
 	d3.csv('data/satelliteData.csv', function (d) {
         return {
 			name: d.name,
@@ -621,7 +634,7 @@
 			h15: +d.h15
         };
     }, function (data) {
-        rawSatData = data.slice(); //copy
+        rawSatData = data.slice();
 		init();
     });
 	
@@ -688,6 +701,7 @@
 		}
 	}, false);
 	
+	//prevents the arrow keys from being used
 	window.addEventListener("keydown", function(e) {
 			// space and arrow keys
 			if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
@@ -696,9 +710,9 @@
 		}, false);
 	window.addEventListener( 'resize', function (){
 		try{
-			camera.aspect = window.innerWidth/.8/window.innerHeight;
+			camera.aspect = window.innerWidth/.83/window.innerHeight;
 			camera.updateProjectionMatrix();
-			renderer.setSize(window.innerWidth/.8,window.innerHeight);
+			renderer.setSize(window.innerWidth/.83,window.innerHeight);
 		}
 		catch(e) {}
 	}, false );
@@ -711,5 +725,4 @@
 		}
         catch(e) {}
     }, false);
-	
 })(window, document);

@@ -275,8 +275,19 @@ for craft in spacecraftNames:
 			file.write(str(int(above_horizon15[i])) + ',')
 			file.write('\n')
 
+"""
+this section of code is a little unconventional, so I'll explain what is happening:
+The javascript side of the application takes a latitude, longitude, and elevation of
+an object in space, and converts them into an x,y,z coordinate. I tried using right 
+ascension and declination for the calculations of the sun's position in relation to 
+the earth, but I couldn't convert that to a format I could use. I decided to get an 
+altitude and azimuth angle of the sun from a point on the earth. I chose 
+90 degrees N and 0 degrees E, and lowered the elevation to very nearly the center of 
+the earth. I could then directly convert altitude and azimuth from that point to 
+latitude and longitude.
+"""
 planets = load('de421.bsp')
-earth, sun, moon = planets['earth'], planets['sun'], planets['moon']
+earth, sun = planets['earth'], planets['sun']
 point = earth + Topos('90 N', '0 E', None, None, -6378136)
 fl = 'sun.csv'
 with open(fl, 'w') as file:

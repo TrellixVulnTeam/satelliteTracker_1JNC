@@ -345,7 +345,7 @@ nav hr {
 /* the nav height will be set to the height in pixels that would have for default, 
 using height:auto won't work but you can put that value in pixels creating the slide*/
 #check:checked ~ nav{
-    height: 270px;
+    height: 265px;
 	border-bottom: 10px solid white;
 	border-radius: 10px 10px 10px 10px;
 }
