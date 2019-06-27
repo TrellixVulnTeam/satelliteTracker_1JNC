@@ -50,6 +50,18 @@ groundSites = {
 "North Pole Satellite Station (Alaska)": Topos('64.753870 N', '-147.345851 E'),
 "Master Control Facility (India)": Topos('13.071199 N', '76.099593 E')
 }
+siteLocations = np.array([
+Topos('38.883056 N', '-77.017369 E'),Topos('29.557857 N', '-95.089023 E'),Topos('28.579680 N', '-80.653010 E'),
+Topos('55.912104 N', '37.810254 E'),Topos('45.963929 N', '63.305125 E'),Topos('45.521186 N', '-73.393632 E'),
+Topos('48.086873 N', '11.280641 E'),Topos('18.913628 N', '-155.682263 E'),Topos('5.224441 N', '-52.776433 E'),
+Topos('36.065140 N', '140.127613 E'),Topos('-72.002914 N', '2.525675 E'),Topos('-35.401565 N', '148.981433 E'),
+Topos('-25.890233 N', '27.685390 E'),Topos('64.753870 N', '-147.345851 E'),Topos('13.071199 N', '76.099593 E')
+])
+siteNames = np.array(["NASA HQ (D.C.)","NASA Mission Control Center","Kennedy Space Center","Moscow Mission Control Center",
+"Baikonur Cosmodrome (Kazakhstan)","Canadian Space Center","German Space Operation Center",
+"South Point Satellite Station (Hawai'i)","Guiana Space Center","Tsukuba Space Center (Japan)",
+"Troll Satellite Station (Antarctica)","Canberra Deep Space Complex (Australia)",
+"KSAT Hartebeesthoek (South Africa)","North Pole Satellite Station (Alaska)","Master Control Facility (India)"])
 horizonData = []
 
 #potential help to speed up calculations: 
