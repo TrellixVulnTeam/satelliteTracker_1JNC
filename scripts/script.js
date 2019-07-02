@@ -371,7 +371,7 @@
 		//positions the directional light so it is above the same point on the earth as the sun
 		var r, lat, lon, x, y, z;
 		r = 20;
-		for (var i = 0; i < 1440; i++) {
+		for (var i = 0; i < numOrbitalPts; i++) {
 			lat = sunArr[i].lat;
 			lon = sunArr[i].lon;
 			var phi = (90-lat)*(Math.PI/180);
@@ -439,13 +439,6 @@
 			for (var j = 0; j < numOrbitalPts; j++) {
 				var current = 0;
 				var index = i*numOrbitalPts+j;
-				if (rawSatData[index].second > 30) {
-				rawSatData[index].second = 0;
-				rawSatData[index].minute += 1;
-				}
-				else {
-					rawSatData[index].second = 0;
-				}
 				
 				//this just grabs the first element of the time array and spits out timeDiff, which
 				// is the index of the next orbital point from where we currently are
