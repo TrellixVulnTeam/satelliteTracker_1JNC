@@ -51,6 +51,9 @@ siteNames = [
 
 m = 60
 hr = 24
+a = datetime.utcnow()
+a = a.replace(second=0, microsecond=0)
+dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
 
 # potential help to speed up calculations:
 # https://github.com/skyfielders/python-skyfield/issues/30
@@ -105,10 +108,6 @@ def readTLEfile(TLEfile):
 
 def comp():
     TLEs = readTLEfile("spacecraft.txt")
-    a = datetime.utcnow()
-    a = a.replace(second=0, microsecond=0)
-    dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
-
     numSats = int(len(TLEs) / 3.0)
     with open('satelliteData.csv', 'w') as f:
         f.write('name,')
@@ -156,7 +155,7 @@ altitude and azimuth angle of the sun from a point on the earth. I chose
 the earth. I could then directly convert altitude and azimuth from that point to 
 latitude and longitude.
 """
-def getSunData():
+"""def getSunData():
     # creates a list of every minute for the next 24 hours
     fl = "orbitLength.csv"
     with open(fl, 'w') as file:
@@ -170,15 +169,37 @@ def getSunData():
     planets = load('de421.bsp')
     earth, sun = planets['earth'], planets['sun']
     point = earth + Topos('90 N', '0 E', None, None, -6378136)
-    with open('sun.csv', 'w') as file:
-        file.write('lat,')
-        file.write('lon,\n')
+    with open('sun.csv', 'w') as f:
+        f.write('lat,')
+        f.write('lon,\n')
         for tTime in t:
             alt, az, dis = point.at(tTime).observe(sun).apparent().altaz()
             az = 180 - az.degrees
-            file.write(str(alt.degrees) + ',')
-            file.write(str(az) + ',\n')
+            f.write(str(alt.degrees) + ',')
+            f.write(str(az) + ',\n')"""
 
+def getSunData():
+    fl = "orbitLength.csv"
+    with open(fl, 'w') as file:
+        file.write("len,\n")
+        file.write(str(m * hr))
+    greenwich = ephem.Observer()
+    greenwich.lat = "0"
+    greenwich.lon = "0"   
+    sun = ephem.Sun(greenwich)
+    with open('sun.csv', 'w') as f:
+        f.write('lat,')
+        f.write('lon,\n')
+        for j in range(len(dList)):
+            greenwich.date = dList[j]
+            sun.compute(greenwich.date)
+            sun_lon = math.degrees(sun.ra - greenwich.sidereal_time() )
+            if sun_lon < -180.0 :
+              sun_lon = 360.0 + sun_lon 
+            elif sun_lon > 180.0 :
+              sun_lon = sun_lon - 360.0
+            sun_lat = math.degrees(sun.dec)
+            f.write(str(sun_lat) + ',' + str(sun_lon) + '\n')
 
 if __name__ == '__main__':
     print(" ")
