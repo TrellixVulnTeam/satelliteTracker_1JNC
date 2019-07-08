@@ -32,7 +32,7 @@ IDs = [11, 20, 22, 29, 46, 19822, 20580, 22049, 23191, 23439, 23560, 23715, 2549
        43558, 43559, 43560, 43565, 43566, 43567, 43595, 43596, 43638, 43707, 43935, 44030, 44031, 44032,
        44033, 44045, 44057, 44062, 44109, 44229, 44231, 44235, 44259, 44332, 44364]
 
-print(len(IDs))
+#print(len(IDs))
 sites = [
     ['38.883056', '-77.017369'], ['29.557857', '-95.089023'], ['28.579680', '-80.653010'],
     ['55.912104', '37.810254'], ['45.963929', '63.305125'], ['45.521186', '-73.393632'],
@@ -123,7 +123,7 @@ def comp():
                 temp.append(TLEs[i * 3 + j])
             sat = ephem.readtle(temp[0], temp[1], temp[2])
 
-            print(sat.name)
+            #print(sat.name)
             temp = []
             for j in range(len(dList)):
                 sat.compute(dList[j])
@@ -202,7 +202,6 @@ def getSunData():
             f.write(str(sun_lat) + ',' + str(sun_lon) + '\n')
 
 if __name__ == '__main__':
-    print(" ")
     print("==== pyephem benchmarck ====")
     print(" ")
     print("Starting.",datetime.utcnow())
@@ -219,3 +218,4 @@ if __name__ == '__main__':
     print("\t\tLasting (hh:mm:ss)")
     print("pyephem \t",leph)
     print(" ")
+    input()
