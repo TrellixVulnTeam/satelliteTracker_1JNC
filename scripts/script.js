@@ -85,26 +85,31 @@
 	function updateOrbits() {
 		var d = Date.now();
 		//this gives us the index of the orbital point we are headed towards
-		var timeDiff = Math.floor((d-satTime)/60000)-1;
+		var timeDiff = Math.floor((d-satTime)/60000);
 		//minuteFraction is how far into the current minute we are. It is used to calculate the updated satellite position.
 		var minuteFraction = ((d-satTime)/60000 - timeDiff);
 		for ( var i = 0; i < numCraft; i++) {
 			var satName = rawSatData[i*numOrbitalPts].name;
-			
 			//this gets the next position in the satDict library, subtracts current position, and multiplies by minuteFraction
 			//before adding that value back to the current position. That gives us the correct position at the current time.
-			satImg[satName].position.x = ((satDict[satName].geometry.vertices[timeDiff-1].x-satDict[satName].geometry.vertices[timeDiff-2].x)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-2].x);
-			satImg[satName].position.y = ((satDict[satName].geometry.vertices[timeDiff-1].y-satDict[satName].geometry.vertices[timeDiff-2].y)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-2].y);
-			satImg[satName].position.z = ((satDict[satName].geometry.vertices[timeDiff-1].z-satDict[satName].geometry.vertices[timeDiff-2].z)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-2].z);
-			if (satName != "ISS ZARYA") {
+			satImg[satName].position.x = ((satDict[satName].geometry.vertices[timeDiff].x-satDict[satName].geometry.vertices[timeDiff-1].x)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].x);
+			satImg[satName].position.y = ((satDict[satName].geometry.vertices[timeDiff].y-satDict[satName].geometry.vertices[timeDiff-1].y)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].y);
+			satImg[satName].position.z = ((satDict[satName].geometry.vertices[timeDiff].z-satDict[satName].geometry.vertices[timeDiff-1].z)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].z);
+			if (satName != "ISS (ZARYA)") {
 				var r = ((rawSatData[i*numOrbitalPts].elevation+6378)*10/6378)/12;
 				if (r > 10) r = 10;
 				satImg[satName].scale = (r, r, 1);
 			}
+			/*else {
+				var place = i*numOrbitalPts + timeDiff-1;
+				lla = ((rawSatData[place+1].latitude - rawSatData[place].latitude)*minuteFraction + rawSatData[place].latitude);
+				llo = ((rawSatData[place+1].longitude - rawSatData[place].longitude)*minuteFraction + rawSatData[place].longitude);
+				console.log(lla, llo);
+			}*/
 		}
-		light.position.x = (sunPos[timeDiff].x - sunPos[timeDiff-1].x)*minuteFraction + sunPos[timeDiff-1].x;
-		light.position.y = (sunPos[timeDiff].y - sunPos[timeDiff-1].y)*minuteFraction + sunPos[timeDiff-1].y;
-		light.position.z = (sunPos[timeDiff].z - sunPos[timeDiff-1].z)*minuteFraction + sunPos[timeDiff-1].z;
+		light.position.x = (sunPos[timeDiff+1].x - sunPos[timeDiff].x)*minuteFraction + sunPos[timeDiff].x;
+		light.position.y = (sunPos[timeDiff+1].y - sunPos[timeDiff].y)*minuteFraction + sunPos[timeDiff].y;
+		light.position.z = (sunPos[timeDiff+1].z - sunPos[timeDiff].z)*minuteFraction + sunPos[timeDiff].z;
 		/*sunSprite.position.x = light.position.x*mul;
 		sunSprite.position.y = light.position.y*mul;
 		sunSprite.position.z = light.position.z*mul;*/
@@ -384,15 +389,6 @@
 			sunPos.push(vert);
 			if (i == timeDiff) {
 				light.position.set(x,y,z);
-				/*var spriteMap = new THREE.TextureLoader().load( 'img/sun.png' );
-				var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
-				sunSprite = new THREE.Sprite( spriteMaterial);
-				x *= mul;
-				y *= mul;
-				z *= mul;
-				sunSprite.position.set(x,y,z);
-				sunSprite.scale.set(.25, .25, 1);
-				scene.add(sunSprite);*/
 			}
 		}
 		light.shadowMapVisible = true;
@@ -439,6 +435,13 @@
 			for (var j = 0; j < numOrbitalPts; j++) {
 				var current = 0;
 				var index = i*numOrbitalPts+j;
+				if (rawSatData[index].second > 30) {
+				rawSatData[index].second = 0;
+				rawSatData[index].minute += 1;
+				}
+				else {
+					rawSatData[index].second = 0;
+				}
 				
 				//this just grabs the first element of the time array and spits out timeDiff, which
 				// is the index of the next orbital point from where we currently are
@@ -463,7 +466,7 @@
 				geometry.vertices.push(vert);
 				prev = current;
 				
-				if (j == timeDiff-1) {
+				if (j == timeDiff) {
 					//this adds the satellite sprites at the location on each path where the satellite
 					//should be in real time.
 					if (satName == "ISS (ZARYA)") {
@@ -557,7 +560,10 @@
 	
     function render() {
         requestAnimationFrame(render);
-		updateOrbits();
+		try {
+			updateOrbits();
+		}
+		catch(e) {}
         controls.update();
         if (mouse.x < sceneW) {
             checkForRaycasts();

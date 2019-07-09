@@ -2,9 +2,7 @@
 # pip install spacetrack
 from spacetrack import SpaceTrackClient
 import ephem
-# pip install skyfield	  https://rhodesmill.org/skyfield/
-from skyfield.api import Topos, load
-import json
+import json, operator
 from datetime import datetime, timedelta
 import math
 
@@ -14,8 +12,6 @@ import math
 # recalculate a 24 hour orbit prediction with the data already grabbed from space-track
 
 
-# either use numba or numpy vectorization
-# https://towardsdatascience.com/speed-up-your-algorithms-part-2-numba-293e554c5cc1
 
 
 # get TLE information from CelesTrak stations_url = 'http://celestrak.com/NORAD/elements/stations.txt'
@@ -50,8 +46,8 @@ siteNames = [
 ]
 
 m = 60
-hr = 24
-a = datetime.utcnow()
+hr = 12
+a = datetime.utcnow() - timedelta(minutes = 1);
 a = a.replace(second=0, microsecond=0)
 dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
 
@@ -64,9 +60,8 @@ dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
 
 timeNow = datetime.utcnow()
 def timeInfo():
-    fl = 'time.txt'
-    with open(fl, 'r') as file:
-        timeOld = file.read()
+    with open('time.txt', 'r') as f:
+        timeOld = f.read()
         timeOld = datetime.strptime(timeOld, '%Y-%m-%d %H:%M:%S.%f')
 
     # gets new data from space-track.org if it has been longer than a day
@@ -78,23 +73,23 @@ def timeInfo():
         st = SpaceTrackClient(user, pd)
         timeOld = datetime(timeNow.year, timeNow.month, timeNow.day, 0, 7, 35) + timedelta(days=1)
         timeOld += timedelta(seconds=.3333333)
-        with open(fl, 'w') as file:
-            file.write(str(timeOld))
+        with open('time.txt', 'w') as f:
+            f.write(str(timeOld))
         # norad_cat_id=[op.inclusive_range(1,36050)] instead of norad_cat_id=[25544, 42712], etc.
         data = st.tle_latest(norad_cat_id=IDs, ordinal=1, format='json')
         a = json.loads(data)
+        a.sort(key=operator.itemgetter('OBJECT_NAME'))
         print("got new data")
 
-        fl = 'spacecraft.txt'
-        with open(fl, 'w') as file:
+        with open('spacecraft.txt', 'w') as f:
             for x in range(len(a)):
                 craft = a[x]
                 b = (craft['TLE_LINE0'] + '\n')[2:]
-                file.write(b)
+                f.write(b)
                 b = craft['TLE_LINE1'] + '\n'
-                file.write(b)
+                f.write(b)
                 b = craft['TLE_LINE2'] + '\n'
-                file.write(b)
+                f.write(b)
 
 
 
@@ -114,6 +109,12 @@ def comp():
         f.write('latitude,')
         f.write('longitude,')
         f.write('elevation,')
+        f.write('year,')
+        f.write('month,')
+        f.write('day,')
+        f.write('hour,')
+        f.write('minute,')
+        f.write('second,')
         for i in range(len(sites)):
             f.write('h' + str(i+1) + ',')
         f.write('\n')
@@ -123,66 +124,27 @@ def comp():
                 temp.append(TLEs[i * 3 + j])
             sat = ephem.readtle(temp[0], temp[1], temp[2])
 
-            #print(sat.name)
-            temp = []
             for j in range(len(dList)):
-                sat.compute(dList[j])
+                tt = dList[j]
+                sat.compute(tt)
+                #the following are needed to get the lat and lon in a format that can be written to a file
                 lat = (float(repr(sat.sublat)) * 180 / math.pi)
                 lon = (float(repr(sat.sublong)) * 180 / math.pi)
                 distance = (sat.elevation / 1000)
-                temp.append(lat)
-                temp.append(lon)
-                temp.append(distance)
                 f.write(str(sat.name) + ',' + str(lat) + ',' + str(lon) + ',' + str(distance) + ',')
-                obs = ephem.Observer()
-                obs.date = dList[j]
+                f.write(str(tt.year) + ',' + str(tt.month) + ',' + str(tt.day) + ',' + str(tt.hour) + ',' + str(tt.minute) + ',')
+                f.write(str(0) + ',')
                 for k in sites:
-                    obs.lat = float(k[0])
-                    obs.lon = float(k[1])
+                    obs = ephem.Observer()
+                    obs.date = tt
+                    #the following are to change the degrees latitude and longitude to radians
+                    obs.lat = float(k[0])*math.pi/180
+                    obs.lon = float(k[1])*math.pi/180
                     sat.compute(obs)
                     f.write(str((sat.alt > 0) * 1) + ',')
                 f.write('\n')
 
-
-"""
-this section of code is a little unconventional, so I'll explain what is happening:
-The javascript side of the application takes a latitude, longitude, and elevation of
-an object in space, and converts them into an x,y,z coordinate. I tried using right 
-ascension and declination for the calculations of the sun's position in relation to 
-the earth, but I couldn't convert that to a format I could use. I decided to get an 
-altitude and azimuth angle of the sun from a point on the earth. I chose 
-90 degrees N and 0 degrees E, and lowered the elevation to very nearly the center of 
-the earth. I could then directly convert altitude and azimuth from that point to 
-latitude and longitude.
-"""
-"""def getSunData():
-    # creates a list of every minute for the next 24 hours
-    fl = "orbitLength.csv"
-    with open(fl, 'w') as file:
-        file.write("len,\n")
-        file.write(str(m * hr))
-    minutes = range(m * hr)
-    # creates a list of times for each minute of the above minutes list
-    ts = load.timescale()
-    d = timeNow.utcnow()
-    t = ts.utc(d.year, d.month, d.day, d.hour + (d.minute / 60), minutes)
-    planets = load('de421.bsp')
-    earth, sun = planets['earth'], planets['sun']
-    point = earth + Topos('90 N', '0 E', None, None, -6378136)
-    with open('sun.csv', 'w') as f:
-        f.write('lat,')
-        f.write('lon,\n')
-        for tTime in t:
-            alt, az, dis = point.at(tTime).observe(sun).apparent().altaz()
-            az = 180 - az.degrees
-            f.write(str(alt.degrees) + ',')
-            f.write(str(az) + ',\n')"""
-
 def getSunData():
-    fl = "orbitLength.csv"
-    with open(fl, 'w') as file:
-        file.write("len,\n")
-        file.write(str(m * hr))
     greenwich = ephem.Observer()
     greenwich.lat = "0"
     greenwich.lon = "0"   
@@ -200,22 +162,27 @@ def getSunData():
               sun_lon = sun_lon - 360.0
             sun_lat = math.degrees(sun.dec)
             f.write(str(sun_lat) + ',' + str(sun_lon) + '\n')
+            
+def writeGroundSites():
+    with open("orbitLength.csv", 'w') as f:
+        f.write("len,\n")
+        f.write(str(m * hr))
+    with open("groundData.csv", 'w') as f:
+        f.write("name,lat,lon\n")
+        for i in range(len(siteNames)):
+            f.write(siteNames[i] + ',' + str(sites[i][0]) + ',' + str(sites[i][1]) + '\n')
 
 if __name__ == '__main__':
     print("==== pyephem benchmarck ====")
-    print(" ")
-    print("Starting.",datetime.utcnow())
-    print(" ")
+    print(" ")   
+    timeInfo()
     t0=datetime.utcnow()
     print("start calculation using pyephem:",t0)
-    timeInfo()
     comp()
     getSunData()
+    writeGroundSites()
     t1=datetime.utcnow()
     print("Calculation ended",t1)
     leph=t1-t0
     print(" ")
-    print("\t\tLasting (hh:mm:ss)")
-    print("pyephem \t",leph)
-    print(" ")
-    input()
+    print("\t\tLasting", leph)
