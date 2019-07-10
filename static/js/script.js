@@ -8,6 +8,11 @@
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
 	
+	/*https://stackoverflow.com/questions/10644236/adding-night-lights-to-a-webgl-three-js-earth
+	https://greggman.com/downloads/examples/three.js/examples/webgl_shader_earth.html
+	https://codepen.io/acauamontiel/pen/yvJoVv
+	*/
+	
     var mouse = new THREE.Vector2(); //used to calculate the current position of the mouse in 2D space
 	var numCraft; // number of satellites
 	var numOrbitalPts; //number of points for each satellite path
@@ -21,6 +26,7 @@
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
 	var clickedObj = null; // the line that is currently clicked
+	var uniforms;
 	
      // Three.js setup procedure
     function setupScene() {
@@ -93,12 +99,14 @@
 			satImg[satName].position.x = ((satDict[satName].geometry.vertices[timeDiff].x-satDict[satName].geometry.vertices[timeDiff-1].x)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].x);
 			satImg[satName].position.y = ((satDict[satName].geometry.vertices[timeDiff].y-satDict[satName].geometry.vertices[timeDiff-1].y)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].y);
 			satImg[satName].position.z = ((satDict[satName].geometry.vertices[timeDiff].z-satDict[satName].geometry.vertices[timeDiff-1].z)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].z);
+			//if the satellite is not the ISS, update the satellite sprite's size based on its current distance from the earth
 			if (satName != "ISS (ZARYA)") {
 				var r = ((rawSatData[i*numOrbitalPts].elevation+6378)*10/6378)/12;
 				if (r > 10) r = 10;
 				satImg[satName].scale = (r, r, 1);
 			}
 			/*else {
+				//just for verification purposes, the following outputs the ISS' current latitude and longitude to check against other sources
 				var place = i*numOrbitalPts + timeDiff-1;
 				lla = ((rawSatData[place+1].latitude - rawSatData[place].latitude)*minuteFraction + rawSatData[place].latitude);
 				llo = ((rawSatData[place+1].longitude - rawSatData[place].longitude)*minuteFraction + rawSatData[place].longitude);
@@ -108,9 +116,9 @@
 		light.position.x = (sunPos[timeDiff+1].x - sunPos[timeDiff].x)*minuteFraction + sunPos[timeDiff].x;
 		light.position.y = (sunPos[timeDiff+1].y - sunPos[timeDiff].y)*minuteFraction + sunPos[timeDiff].y;
 		light.position.z = (sunPos[timeDiff+1].z - sunPos[timeDiff].z)*minuteFraction + sunPos[timeDiff].z;
-		/*sunSprite.position.x = light.position.x*mul;
-		sunSprite.position.y = light.position.y*mul;
-		sunSprite.position.z = light.position.z*mul;*/
+		//updates the earth day/night shader to be consistent with the sun's position
+		uniforms.sunDirection.value.copy(light.position);
+		uniforms.sunDirection.value.normalize();
 	}
 	
 	//determines whether a certain groundsite checkbox is checked. Used in the addVisiblePath function
@@ -314,54 +322,10 @@
 		
     //Creates the earth, starfield, and lights
     function createEarth() {
-        var planet = new THREE.SphereGeometry(10, 128, 128);
-		var planetMat = new THREE.MeshPhongMaterial();
-        var TextureLoader = new THREE.TextureLoader(manager);
-        TextureLoader.load('static/img/marble.png', function (texture) {
-            texture.anisotropy = 8;
-            planetMat.map = texture;
-			planetMat.shininess = 0;
-			planetMat.roughness = 1;
-            planetMat.needsUpdate = false;
-        });
-        var outlineMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
-        var outlineMesh = new THREE.Mesh(planet, outlineMaterial);
-        outlineMesh.scale.multiplyScalar(1.003);
-        var planetMesh = new THREE.Mesh(planet, planetMat);
-        planetMesh.add(outlineMesh);
-		planetMesh.name = "globe";
-		planetMesh.castShadow = true;
-		planetMesh.receiveShadow = true;
-        scene.add(planetMesh);
-		
-		var cloudGeo = new THREE.SphereGeometry(10.08,64,64);
-		var cloudMat = new THREE.MeshPhongMaterial({color: 0xffffff, transparent: true, opacity: .7});
-		TextureLoader.load('static/img/clouds.png', function (texture) {
-            texture.anisotropy = 8;
-            cloudMat.map = texture;
-			cloudMat.shininess = 0;
-            cloudMat.needsUpdate = false;
-			
-        });
-		var clouds = new THREE.Mesh(cloudGeo, cloudMat);
-		clouds.castShadow = true;
-		clouds.receiveShadow = true;
-		scene.add(clouds);
-		
-		var stars = new THREE.SphereGeometry(500000, 64, 64);
-		var starsMat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
-		TextureLoader.load('static/img/milkyWay.jpg', function (texture) {
-			texture.anisotropy = 8;
-			starsMat.map = texture;
-			starsMat.needsUpdate = false;
-		});
-		var starsMesh = new THREE.Mesh(stars, starsMat);
-		scene.add(starsMesh);
-		
 		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
 		//to act as the sun.
 		scene.add(new THREE.AmbientLight(0x222222));
-		light = new THREE.DirectionalLight(0xeeeeff, 1.6);
+		light = new THREE.DirectionalLight(0xeeeeff, 1);
 		
 		// I don't know why you have to subtract a month off, but you do in order to get the
 		//correct date. You also need to subtract 6 hours in order to get the correct UTC time
@@ -392,6 +356,147 @@
 		light.shadowMapVisible = true;
 		light.castShadow = true;
 		scene.add(light);
+		
+		var TextureLoader = new THREE.TextureLoader(manager);
+		
+		//used for the shader to show the parts of the earth where it is currently day and night
+		uniforms = {
+				sunDirection: {
+					value: light.position
+				},
+				/*sunIntensity: {
+					value: light.intensity
+				},*/
+				dayTexture: {
+					value: TextureLoader.load('static/img/marble.png', function (texture) {
+							texture.anisotropy = 8;
+							planetMat.map = texture;
+							planetMat.shininess = 0;
+							planetMat.roughness = 1;
+							planetMat.needsUpdate = false;
+						})
+				},
+				nightTexture: {
+					value: TextureLoader.load('static/img/earthNight.jpg', function (texture) {
+							texture.anisotropy = 8;
+							planetMat.map = texture;
+							planetMat.shininess = 0;
+							planetMat.roughness = 1;
+							planetMat.needsUpdate = false;
+						})
+				}
+			};
+		
+        var planet = new THREE.SphereGeometry(10, 128, 128);
+		var planetMat = new THREE.ShaderMaterial({
+			//for more information on why the following is done this way: 
+			//https://stackoverflow.com/questions/56977686/creating-a-day-night-shader-that-follows-a-light-souce/
+			uniforms: uniforms,
+			vertexShader: `
+				varying vec2 vUv;
+				varying vec3 vNormal;
+				varying vec3 vSunDir;
+
+				uniform vec3 sunDirection;
+
+				void main() {
+					vUv = uv;
+					vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+
+					vNormal = normalMatrix * normal;
+					vSunDir = mat3(viewMatrix) * sunDirection;
+
+					gl_Position = projectionMatrix * mvPosition;
+				}
+			`,
+			fragmentShader: `
+				uniform sampler2D dayTexture;
+				uniform sampler2D nightTexture;
+				
+				//uniform float sunIntensity;
+
+				varying vec2 vUv;
+				varying vec3 vNormal;
+				varying vec3 vSunDir;
+
+				void main(void) {
+					vec3 dayColor = texture2D(dayTexture, vUv).rgb;
+					vec3 nightColor = texture2D(nightTexture, vUv).rgb;
+
+					float cosineAngleSunToNormal = dot(normalize(vNormal), normalize(vSunDir));
+
+					cosineAngleSunToNormal = clamp(cosineAngleSunToNormal * 17.0, -1.0, 1.0);
+
+					float mixAmount = cosineAngleSunToNormal * 0.5 + 0.5;
+
+					vec3 color = mix(nightColor, dayColor, mixAmount); //*sunIntensity
+
+					gl_FragColor = vec4(color, 1.0);
+				}
+			`
+		});
+        
+		//creates an atmosphere-like effect around the edges of the globe
+        var outlineMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
+        var outlineMesh = new THREE.Mesh(planet, outlineMaterial);
+        outlineMesh.scale.multiplyScalar(1.003);
+        var planetMesh = new THREE.Mesh(planet, planetMat);
+        planetMesh.add(outlineMesh);
+		planetMesh.name = "globe";
+		planetMesh.castShadow = true;
+		planetMesh.receiveShadow = true;
+        scene.add(planetMesh);
+		
+		//If I can get THREEx to work, this would create a much more aesthetic atmosphere
+		/*var innerAtmoGeo = planet.clone();
+		var innerAtmoMat = THREEx.createAtmosphereMaterial();
+		innerAtmoMat.uniforms.glowColor.value.set(0x88ffff);
+		innerAtmoMat.uniforms.coeficient.value = 1;
+		innerAtmoMat.uniforms.power.value = 5;
+		innerAtmo p new THREE.Mesh(innerAtmoGeo, innerAtmoMat);
+		innerAtmo.scale.multiplyScalar(1.008);
+		
+		var outerAtmoGeo = planet.clone();
+		var outerAtmoMat = THREEx.createAtmosphereMaterial();
+		outerAtmoMat.side = THREE.BackSide;
+		outerAtmoMat.uniforms.glowColor.value.set(0x0088ff);
+		outerAtmoMat.uniforms.coeficient.value = .68;
+		outerAtmoMat.uniforms.power.value = 10;
+		var outerAtmo = new THREE.Mesh(this.outerAtmosphereGeometry, this.outerAtmosphereMaterial);
+		outerAtmo.scale.multiplyScalar(1.06);
+		
+		planetMesh.add(innerAtmo);
+		planetMesh.add(outerAtmo);*/
+		
+		//creates a transparent sphere just larger than the earth to show the clouds
+		var cloudGeo = new THREE.SphereGeometry(10.08,64,64);
+		var cloudMat = new THREE.MeshPhongMaterial({color: 0xffffff, transparent: true, opacity: .7});
+		TextureLoader.load('static/img/clouds.png', function (texture) {
+            texture.anisotropy = 8;
+            cloudMat.map = texture;
+			cloudMat.shininess = 0;
+            cloudMat.needsUpdate = false;
+			
+        });
+		var clouds = new THREE.Mesh(cloudGeo, cloudMat);
+		clouds.castShadow = true;
+		clouds.receiveShadow = true;
+		scene.add(clouds);
+		
+		//creates a large sphere and projects the texture on the inside to create a starry background
+		var stars = new THREE.SphereGeometry(500000, 64, 64);
+		var starsMat = new THREE.MeshBasicMaterial({color: 0xffffff, side: THREE.BackSide});
+		TextureLoader.load('static/img/milkyWay.jpg', function (texture) {
+			//the higher the anisotropy is basically just makes the texture more crisp from glancing angles.
+			//Must be in power of 2, higher than 16 is unnecessary
+			texture.anisotropy = 8;
+			starsMat.map = texture;
+			starsMat.needsUpdate = false;
+		});
+		var starsMesh = new THREE.Mesh(stars, starsMat);
+		scene.add(starsMesh);
+		
+		
     }
 	
 	//creates all of the groundsite markers
@@ -513,7 +618,6 @@
 			spacecraft.push(satName);
 		}
 	}
-	
 	
     function init() {
         
