@@ -308,6 +308,7 @@ nav{
     height: 0;
 	overflow-y: scroll;
 	padding-right: 39px;
+	scrollbar-width: none; /*for firefox*/
 }
 nav p{
     text-decoration: none;

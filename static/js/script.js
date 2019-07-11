@@ -27,6 +27,7 @@
 	var groundSites = {}; // dictionary of groundsite markers
 	var clickedObj = null; // the line that is currently clicked
 	var uniforms;
+	var clickLoc = new THREE.Vector2();
 	
      // Three.js setup procedure
     function setupScene() {
@@ -94,8 +95,8 @@
 		var minuteFraction = ((d-satTime)/60000 - timeDiff);
 		for ( var i = 0; i < numCraft; i++) {
 			var satName = rawSatData[i*numOrbitalPts].name;
-			//this gets the next position in the satDict library, subtracts current position, and multiplies by minuteFraction
-			//before adding that value back to the current position. That gives us the correct position at the current time.
+			//this gets the next position in the satDict dictionary, subtracts the current position to get the distance between the two, and multiplies by minuteFraction
+			//before adding that new value back to the current position. That gives us the correct position at the current time.
 			satImg[satName].position.x = ((satDict[satName].geometry.vertices[timeDiff].x-satDict[satName].geometry.vertices[timeDiff-1].x)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].x);
 			satImg[satName].position.y = ((satDict[satName].geometry.vertices[timeDiff].y-satDict[satName].geometry.vertices[timeDiff-1].y)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].y);
 			satImg[satName].position.z = ((satDict[satName].geometry.vertices[timeDiff].z-satDict[satName].geometry.vertices[timeDiff-1].z)*minuteFraction + satDict[satName].geometry.vertices[timeDiff-1].z);
@@ -113,10 +114,10 @@
 				console.log(lla, llo);
 			}*/
 		}
-		light.position.x = (sunPos[timeDiff+1].x - sunPos[timeDiff].x)*minuteFraction + sunPos[timeDiff].x;
-		light.position.y = (sunPos[timeDiff+1].y - sunPos[timeDiff].y)*minuteFraction + sunPos[timeDiff].y;
-		light.position.z = (sunPos[timeDiff+1].z - sunPos[timeDiff].z)*minuteFraction + sunPos[timeDiff].z;
-		//updates the earth day/night shader to be consistent with the sun's position
+		light.position.x = (sunPos[timeDiff].x - sunPos[timeDiff-1].x)*minuteFraction + sunPos[timeDiff-1].x;
+		light.position.y = (sunPos[timeDiff].y - sunPos[timeDiff-1].y)*minuteFraction + sunPos[timeDiff-1].y;
+		light.position.z = (sunPos[timeDiff].z - sunPos[timeDiff-1].z)*minuteFraction + sunPos[timeDiff-1].z;
+		//updates the earth's day/night shader to be consistent with the sun's position
 		uniforms.sunDirection.value.copy(light.position);
 		uniforms.sunDirection.value.normalize();
 	}
@@ -322,9 +323,10 @@
 		
     //Creates the earth, starfield, and lights
     function createEarth() {
-		//adds an ambient light so the dark side of the earth can be seen. Also adds a directional light
-		//to act as the sun.
-		scene.add(new THREE.AmbientLight(0x222222));
+		//adds an ambient light so the dark side of the earth can be seen. With the day/night shader added, this is no longer necessary
+		//scene.add(new THREE.AmbientLight(0x222222));
+		//the directional light acts like the sun. The intensity doesn't matter now that the day/night shader is in place. I have added
+		//the light's intensity to the shader as commented out sections, as I didn't like how the light interacted with the shader.
 		light = new THREE.DirectionalLight(0xeeeeff, 1);
 		
 		// I don't know why you have to subtract a month off, but you do in order to get the
@@ -389,7 +391,7 @@
 		
         var planet = new THREE.SphereGeometry(10, 128, 128);
 		var planetMat = new THREE.ShaderMaterial({
-			//for more information on why the following is done this way: 
+			//for more information on why the shader is done this way: 
 			//https://stackoverflow.com/questions/56977686/creating-a-day-night-shader-that-follows-a-light-souce/
 			uniforms: uniforms,
 			vertexShader: `
@@ -425,7 +427,7 @@
 
 					float cosineAngleSunToNormal = dot(normalize(vNormal), normalize(vSunDir));
 
-					cosineAngleSunToNormal = clamp(cosineAngleSunToNormal * 17.0, -1.0, 1.0);
+					cosineAngleSunToNormal = clamp(cosineAngleSunToNormal * 30.0, -1.0, 1.0);
 
 					float mixAmount = cosineAngleSunToNormal * 0.5 + 0.5;
 
@@ -479,8 +481,6 @@
 			
         });
 		var clouds = new THREE.Mesh(cloudGeo, cloudMat);
-		clouds.castShadow = true;
-		clouds.receiveShadow = true;
 		scene.add(clouds);
 		
 		//creates a large sphere and projects the texture on the inside to create a starry background
@@ -772,34 +772,67 @@
 		catch(e) {}
 	}
 	
-	document.addEventListener( 'click', function(ev) {
-		raycaster.setFromCamera(mouse, camera);
-		for (var i = 1; i < scene.children.length; i++) {
-			if (scene.children[i].type == "Line") {
-				if (scene.children[i].name == clickedObj) {continue;}
-				scene.children[i].material.opacity = 0.4;
-			}
-		}
-		//calculate objects intersecting the picking ray
-		var intersects = raycaster.intersectObjects(scene.children);
-		if (mouse.x > -.68) {
-			//only first intersect
-			if (intersects.length != 0) {
-				if (intersects[0].object.type == "Line") {
-					if (intersects[0].object.material.opacity == 1.0) {
-						intersects[0].object.material.opacity = 0.4;
-						clickedObj = null;
+	document.addEventListener( 'mousedown', function(ev) {
+		clickLoc.x = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
+		clickLoc.y = ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;
+	}, false);	
+	document.addEventListener( 'mouseup', function(ev) {
+		xLoc = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
+		yLoc = - ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;		
+		if (clickLoc.x == xLoc && Math.abs((clickLoc.y + yLoc) - 2) < .001) {
+			raycaster.setFromCamera(mouse, camera);
+			//calculate objects intersecting the picking ray
+			var intersects = raycaster.intersectObjects(scene.children);
+			if (mouse.x > -.68) {
+				//only first intersect
+				if (intersects.length != 0) {
+					if (intersects[0].object.type == "Line") {
+						if (intersects[0].object.name == clickedObj) {
+							intersects[0].object.material.opacity = 0.4;
+							clickedObj = null;
+						}
+						else {
+							intersects[0].object.material.opacity = 1.0;
+							clickedObj = intersects[0].object.name;
+						}	
+					}
+					else if (intersects[0].object.type == "Sprite") {
+						objName = intersects[0].object.name;
+						console.log(objName, "sprite");
+						for (var i = 1; i < scene.children.length; i++) {
+							if (scene.children[i].name == objName) {
+								if (scene.children[i].type == "Line") {
+									if (clickedObj == null) {
+										scene.children[i].material.opacity = 1;
+										clickedObj = objName;
+									}
+									else {
+										if (clickedObj == objName) {
+											scene.children[i].material.opacity = 0.4;
+											clickedObj = null;
+										}
+										else {
+											scene.children[i].material.opacity = 1;
+											clickedObj = objName;
+										}
+									}
+								}
+							}
+							
+						}
 					}
 					else {
-					intersects[0].object.material.opacity = 1.0;
-					clickedObj = intersects[0].object.name;
-					}	
-				}
-				else if (intersects[0].object.type == "Sprite") {
-					console.log(intersects[0].object.name, "sprite");
+						for (var i = 1; i < scene.children.length; i++) {
+							if (scene.children[i].type == "Line") {
+								scene.children[i].material.opacity = 0.4;
+							}
+						}
+						clickedObj = null;
+					}
 				}
 			}
 		}
+		
 	}, false);
 	
 	//prevents the arrow keys from being used
