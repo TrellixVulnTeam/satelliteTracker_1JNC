@@ -32,7 +32,7 @@
      // Three.js setup procedure
     function setupScene() {
         scene = new THREE.Scene();
-        canvas = document.getElementById("scene");
+        canvas = document.getElementById("scene");		
         renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
         renderer.setSize(sceneW, windowH);
         renderer.setClearColor(0x000000, 1);
@@ -73,7 +73,7 @@
 			document.getElementById("spacecraftTitle").style.top = "38%";
 			document.getElementById("spacecraftTitle").visible = true;
 			document.getElementById("craftnav").style.width = "20%";
-			document.getElementById("craftnav").style.height = "48%";
+			document.getElementById("craftnav").style.height = "46%";
 			document.getElementById("craftnav").style.top = "54%";
 			document.getElementById("craftnav").visible = true;
 		}, 500);
