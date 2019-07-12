@@ -103,6 +103,12 @@ input {
        margin-left: 20px; 
 }
 
+#textSprite {
+	color: #fff;
+	z-index: 1;
+	background-color: #00bfff;
+}
+
 /* loading screen elements*/
 
 #loading-wrapper {

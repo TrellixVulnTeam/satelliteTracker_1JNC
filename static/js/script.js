@@ -1,5 +1,10 @@
 (function (window, document, undefined) {
     var canvas;
+	
+	var bitmap = document.createElement('canvas');
+	var g = bitmap.getContext('2d');
+	
+	var lbl, tip;
     var scene, camera, renderer, controls, manager, light;
     var windowW = window.innerWidth; //size of the whole window
     var sceneW = window.innerWidth / .83; //size of the scene, dividing innerWidth by .83 moves the globe to the right
@@ -31,8 +36,35 @@
 	
      // Three.js setup procedure
     function setupScene() {
+		//https://stackoverflow.com/questions/12380072/threejs-render-text-in-canvas-as-texture-and-then-apply-to-a-plane
+		//https://codepen.io/anon/pen/RzOEPg
         scene = new THREE.Scene();
-        canvas = document.getElementById("scene");		
+        canvas = document.getElementById("scene");
+		lbl = document.getElementById('textSprite');
+		lbl.style.position = "absolute";
+		text = "hello world";
+		
+		bitmap.width = 25;
+		bitmap.height = 12;
+		g.font = 'Bold 5px Arial';
+
+		g.fillStyle = 'white';
+		g.fillText(text, 0, 5);
+		/*g.strokeStyle = 'black';
+		g.strokeText(text, 0, 10);*/
+
+		// canvas contents will be used for a texture
+		var texture = new THREE.Texture(bitmap) 
+		texture.needsUpdate = true;
+		
+		// canvas contents will be used for a texture
+		var tex = new THREE.Texture(bitmap);
+		tex.needsUpdate = true;
+		//var spriteMap = new THREE.TextureLoader().load( tex );
+		var spriteMaterial = new THREE.SpriteMaterial( { map: tex, sizeAttenuation: false } );
+		tip = new THREE.Sprite( spriteMaterial);
+		tip.visible = true;
+		scene.add(tip);
         renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
         renderer.setSize(sceneW, windowH);
         renderer.setClearColor(0x000000, 1);
@@ -593,8 +625,7 @@
 						}
 						
 						//the sprite is scaled accordingly to how far away it is from the earth.
-						//This just makes it easier to see. It should update position and scale 
-						//in the updateSat() function
+						//This just makes it easier to see. Position and scale are updated in the updateSat() function
 						sprite.scale.set(imgScale, imgScale, 1);
 						sprite.position.set(x, y, z);
 						scene.add( sprite );
@@ -652,9 +683,6 @@
 			if (mouse.x > -.68) {
 				if (intersects[0].object.type == "Line") {
 					intersects[0].object.material.opacity = 1.0;
-				}
-				else if (intersects[0].object.type == "Sprite") {
-					//console.log(intersects[0].object.name);
 				}
 			}
         }
@@ -786,40 +814,19 @@
 			if (mouse.x > -.68) {
 				//only first intersect
 				if (intersects.length != 0) {
-					if (intersects[0].object.type == "Line") {
-						if (intersects[0].object.name == clickedObj) {
-							intersects[0].object.material.opacity = 0.4;
-							clickedObj = null;
-						}
-						else {
-							intersects[0].object.material.opacity = 1.0;
+					//console.log(intersects[0].point);
+					if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
+						intersects[0].object.material.opacity = 1.0;
 							clickedObj = intersects[0].object.name;
-						}	
-					}
-					else if (intersects[0].object.type == "Sprite") {
-						objName = intersects[0].object.name;
-						console.log(objName, "sprite");
-						for (var i = 1; i < scene.children.length; i++) {
-							if (scene.children[i].name == objName) {
-								if (scene.children[i].type == "Line") {
-									if (clickedObj == null) {
-										scene.children[i].material.opacity = 1;
-										clickedObj = objName;
-									}
-									else {
-										if (clickedObj == objName) {
-											scene.children[i].material.opacity = 0.4;
-											clickedObj = null;
-										}
-										else {
-											scene.children[i].material.opacity = 1;
-											clickedObj = objName;
-										}
-									}
-								}
-							}
+							/*lbl.innerHTML = clickedObj;
+							lbl.style.height = lbl.clientHeight;
+							lbl.style.width = lbl.clientWidth;
+							lbl.style.left = ev.clientX-(lbl.clientWidth/2) +'px';
+							lbl.style.top = ev.clientY-(lbl.clientHeight/2)+'px';
 							
-						}
+							tip.scale.set(lbl.clientWidth*.0015, .03, .25);*/
+							tip.position.copy(intersects[0].point);
+							tip.visible = true;	
 					}
 					else {
 						for (var i = 1; i < scene.children.length; i++) {
@@ -828,6 +835,8 @@
 							}
 						}
 						clickedObj = null;
+						lbl.innerHTML = "";
+						tip.visible = false;
 					}
 				}
 			}
