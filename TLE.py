@@ -59,7 +59,6 @@ def timeInfo(timeOld):
         deprList = [x for x in deprData for y in satData if x["OBJECT_NAME"] == y["OBJECT_NAME"]]
         print()
         print("got new data")
-        print()
         for x in deprList:
             print('Spacecraft', x["OBJECT_NAME"], 'NORAD ID:', x['NORAD_CAT_ID'], 'will decay on', x['DECAY_EPOCH'])
             print('Please replace this spacecraft with a new spacecraft to avoid errors in calculating satellite orbits')
@@ -174,4 +173,3 @@ def writeGroundSites():
         f.write("name,lat,lon\n")
         for i in range(len(siteNames)):
             f.write(siteNames[i] + ',' + str(sites[i][0]) + ',' + str(sites[i][1]) + '\n')
-

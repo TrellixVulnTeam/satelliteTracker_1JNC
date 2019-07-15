@@ -2,9 +2,7 @@
     var canvas;
 	
 	var bitmap = document.createElement('canvas');
-	var g = bitmap.getContext('2d');
-	
-	var lbl, tip;
+	var tooltipSprite, g = bitmap.getContext('2d', {antialias: true, depth: false});
     var scene, camera, renderer, controls, manager, light;
     var windowW = window.innerWidth; //size of the whole window
     var sceneW = window.innerWidth / .83; //size of the scene, dividing innerWidth by .83 moves the globe to the right
@@ -40,31 +38,17 @@
 		//https://codepen.io/anon/pen/RzOEPg
         scene = new THREE.Scene();
         canvas = document.getElementById("scene");
-		lbl = document.getElementById('textSprite');
-		lbl.style.position = "absolute";
-		text = "hello world";
 		
-		bitmap.width = 25;
-		bitmap.height = 12;
-		g.font = 'Bold 5px Arial';
-
-		g.fillStyle = 'white';
-		g.fillText(text, 0, 5);
-		/*g.strokeStyle = 'black';
-		g.strokeText(text, 0, 10);*/
-
-		// canvas contents will be used for a texture
-		var texture = new THREE.Texture(bitmap) 
+		bitmap.width = 1024;
+		bitmap.height = 1024;
+		g.font = 'Bold 25px Arial';
+		var texture = new THREE.Texture(bitmap);
 		texture.needsUpdate = true;
-		
-		// canvas contents will be used for a texture
-		var tex = new THREE.Texture(bitmap);
-		tex.needsUpdate = true;
 		//var spriteMap = new THREE.TextureLoader().load( tex );
-		var spriteMaterial = new THREE.SpriteMaterial( { map: tex, sizeAttenuation: false } );
-		tip = new THREE.Sprite( spriteMaterial);
-		tip.visible = true;
-		scene.add(tip);
+		var spriteMaterial = new THREE.SpriteMaterial( { map: texture, sizeAttenuation: false} );
+		tooltipSprite = new THREE.Sprite( spriteMaterial);
+		tooltipSprite.visible = false;
+		scene.add(tooltipSprite);
         renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
         renderer.setSize(sceneW, windowH);
         renderer.setClearColor(0x000000, 1);
@@ -251,6 +235,7 @@
 					satDict[checkboxes[i].name].visible = false;
 					satDict[checkboxes[i].name].material.opacity = 0.4;
 					satImg[checkboxes[i].name].visible = false;
+					tooltipSprite.visible = false;
 				}
 			}
 			else {
@@ -288,6 +273,7 @@
 			else {
 				sat.visible = false;
 				img.visible = false;
+				tooltipSprite.visible = false;
 				sat.material.opacity = 0.4;
 			}
 			allButton = 'allCheck';
@@ -610,6 +596,7 @@
 						var sprite = new THREE.Sprite( spriteMaterial);
 						sprite.scale.set(1, 1, 1);
 						sprite.position.set(x, y, z);
+						sprite.renderOrder = 1;
 						scene.add( sprite );
 						sprite.visible = false;
 					}
@@ -628,6 +615,7 @@
 						//This just makes it easier to see. Position and scale are updated in the updateSat() function
 						sprite.scale.set(imgScale, imgScale, 1);
 						sprite.position.set(x, y, z);
+						sprite.renderOrder = 100;
 						scene.add( sprite );
 						sprite.visible = false;
 					}
@@ -640,6 +628,7 @@
 			// the line is not visible when the app first starts.
 			var line = new THREE.Line( geometry, material );
 			line.name = satName;
+			//line.renderOrder = 1;
 			scene.add(line);
 			line.visible = false;
 			// adds the line to a dictionary for easy access later
@@ -818,15 +807,22 @@
 					if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
 						intersects[0].object.material.opacity = 1.0;
 							clickedObj = intersects[0].object.name;
-							/*lbl.innerHTML = clickedObj;
-							lbl.style.height = lbl.clientHeight;
-							lbl.style.width = lbl.clientWidth;
-							lbl.style.left = ev.clientX-(lbl.clientWidth/2) +'px';
-							lbl.style.top = ev.clientY-(lbl.clientHeight/2)+'px';
 							
-							tip.scale.set(lbl.clientWidth*.0015, .03, .25);*/
-							tip.position.copy(intersects[0].point);
-							tip.visible = true;	
+							// the bitmap canvas contents will be used for a texture. The name of the
+							//clicked spacecraft image or path will be used as the contents of the bitmap canvas.
+							metrics = g.measureText(clickedObj);
+							console.log(metrics.width);
+							g.clearRect(0,0,bitmap.width, bitmap.height);
+							g.fillStyle = 'white';
+							g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+							g.strokeStyle = 'black';
+							g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+							tooltipSprite.material.map.needsUpdate = true;
+							//renders the sprite after the orbit paths so the sprite doesn't cut out any
+							// of the visible satellite paths
+							tooltipSprite.renderOrder = 100;
+							tooltipSprite.position.copy(intersects[0].point);
+							tooltipSprite.visible = true;
 					}
 					else {
 						for (var i = 1; i < scene.children.length; i++) {
@@ -835,8 +831,7 @@
 							}
 						}
 						clickedObj = null;
-						lbl.innerHTML = "";
-						tip.visible = false;
+						tooltipSprite.visible = false;
 					}
 				}
 			}

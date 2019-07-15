@@ -16,10 +16,10 @@ if __name__ == '__main__':
         timeOld[1] = datetime.strptime(timeOld[1], '%Y-%m-%d %H:%M:%S.%f')
     timeOld[1] += timedelta(hours=10)
     if timeNow > timeOld[1]:
+        timeOld = TLE.timeInfo(timeOld[0])
         print()
         print('Recalculating Data')
         print()
-        timeOld = TLE.timeInfo(timeOld[0])
         TLE.comp()
         TLE.getSunData()
         TLE.writeGroundSites()
