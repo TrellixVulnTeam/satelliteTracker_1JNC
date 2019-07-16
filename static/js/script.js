@@ -811,7 +811,6 @@
 							// the bitmap canvas contents will be used for a texture. The name of the
 							//clicked spacecraft image or path will be used as the contents of the bitmap canvas.
 							metrics = g.measureText(clickedObj);
-							console.log(metrics.width);
 							g.clearRect(0,0,bitmap.width, bitmap.height);
 							g.fillStyle = 'white';
 							g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
