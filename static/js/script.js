@@ -805,23 +805,22 @@
 				if (intersects.length != 0) {
 					//console.log(intersects[0].point);
 					if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
-						intersects[0].object.material.opacity = 1.0;
-							clickedObj = intersects[0].object.name;
-							
-							// the bitmap canvas contents will be used for a texture. The name of the
-							//clicked spacecraft image or path will be used as the contents of the bitmap canvas.
-							metrics = g.measureText(clickedObj);
-							g.clearRect(0,0,bitmap.width, bitmap.height);
-							g.fillStyle = 'white';
-							g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-							g.strokeStyle = 'black';
-							g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-							tooltipSprite.material.map.needsUpdate = true;
-							//renders the sprite after the orbit paths so the sprite doesn't cut out any
-							// of the visible satellite paths
-							tooltipSprite.renderOrder = 100;
-							tooltipSprite.position.copy(intersects[0].point);
-							tooltipSprite.visible = true;
+						clickedObj = intersects[0].object.name;
+						satDict[clickedObj].material.opacity = 1.0;
+						/*the bitmap canvas contents will be used for a texture. The name of the
+						clicked spacecraft image or path will be used as the contents of the bitmap canvas.*/
+						metrics = g.measureText(clickedObj);
+						g.clearRect(0,0,bitmap.width, bitmap.height);
+						g.fillStyle = 'white';
+						g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+						g.strokeStyle = 'black';
+						g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+						tooltipSprite.material.map.needsUpdate = true;
+						//renders the sprite after the orbit paths so the sprite doesn't cut out any
+						// of the visible satellite paths
+						tooltipSprite.renderOrder = 100;
+						tooltipSprite.position.copy(intersects[0].point);
+						tooltipSprite.visible = true;
 					}
 					else {
 						for (var i = 1; i < scene.children.length; i++) {
