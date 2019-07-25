@@ -11,23 +11,23 @@ import math
 IDs = [11, 20, 22, 29, 46, 19822, 20580, 22049, 23191, 23439, 23560, 23715, 25492, 25544, 25791, 25989, 25994,
        27424, 27540, 27600, 27607, 30580, 30797, 31135, 32275, 32781, 33591, 33752, 36827, 37755, 37790, 37818,
        38771, 39026, 39034, 39075, 39084, 39088, 39444, 39768, 40019, 40069, 40296, 40482, 40719, 40878, 40889,
-       41019, 41032, 41332, 41765, 41783, 41875, 42711, 42726, 42808, 42959, 42982, 43020, 43021,
+       41019, 41032, 41332, 41783, 41875, 42711, 42726, 42808, 42959, 42982, 43020, 43021,
        43115, 43231, 43437, 43466, 43468, 43539, 43546, 43547, 43548, 43549, 43550, 43552, 43556, 43557,
        43558, 43559, 43560, 43565, 43566, 43567, 43595, 43596, 43638, 43707, 43935, 44030, 44031, 44032,
-       44033, 44045, 44057, 44062, 44109, 44229, 44231, 44235, 44259, 44332, 44364, 44420]
+       44033, 44045, 44057, 44062, 44109, 44229, 44231, 44235, 44259, 44332, 44364, 44374, 44420]
 
 sites = [
-    ['29.557857', '-95.089023'], ['48.086873', '11.280641'], ['18.913628', '-155.682263'], 
-	['5.224441', '-52.776433'], ['36.065140', '140.127613'], ['-72.002914', '2.525675'], 
-	['-35.401565', '148.981433'], ['-25.890233', '27.685390'], ['64.753870', '-147.345851'], 
-	['13.071199', '76.099593 ']
+    [29.557857, -95.089023], [48.086873, 11.280641], [18.913628, -155.682263], 
+	[5.224441, -52.776433], [36.065140, 140.127613], [-72.002914, 2.525675], 
+	[-35.401565, 148.981433], [64.753870, -147.345851], 
+	[13.071199, 76.099593]
 ]
 
 siteNames = [
     "NASA Mission Control Center", "German Space Operation Center",
      "South Point Satellite Station (Hawai'i)", "Guiana Space Center", 
 	 "Tsukuba Space Center (Japan)", "Troll Satellite Station (Antarctica)",
-	 "Canberra Deep Space Complex (Australia)", "KSAT Hartebeesthoek (South Africa)", 
+	 "Canberra Deep Space Complex (Australia)",
 	 "North Pole Satellite Station (Alaska)", "Master Control Facility (India)"
 ]
 
@@ -36,7 +36,7 @@ hr = 12
 a = datetime.utcnow() - timedelta(minutes = 1)
 a = a.replace(second=0, microsecond=0)
 dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
-
+    
 
 def timeInfo(timeOld):
     timeNow = datetime.utcnow()
@@ -56,7 +56,7 @@ def timeInfo(timeOld):
         depr = st.decay(decay_epoch=decay_epoch, orderby='norad_cat_id', format='json')
         satData = json.loads(data)
         deprData = json.loads(depr)
-        deprList = [x for x in deprData for y in satData if x["OBJECT_NAME"] == y["OBJECT_NAME"]]
+        deprList = [x for x in deprData for y in satData if x['NORAD_CAT_ID'] == y['NORAD_CAT_ID']]
         print()
         print("got new data")
         for x in deprList:
@@ -103,7 +103,9 @@ def readTLEfile(TLEfile):
     return theList
 
 
-def comp():
+def comp(u):
+    sites.insert(0, u)
+    siteNames.insert(0, "Your Location")
     TLEs = readTLEfile("static/data/spacecraft.txt")
     numSats = int(len(TLEs) / 3.0)
     with open('static/data/satelliteData.csv', 'w') as f:

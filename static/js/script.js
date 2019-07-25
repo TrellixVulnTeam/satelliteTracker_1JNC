@@ -11,10 +11,7 @@
     var raycaster = new THREE.Raycaster();
     raycaster.linePrecision = 0.1;
 	
-	/*https://stackoverflow.com/questions/10644236/adding-night-lights-to-a-webgl-three-js-earth
-	https://greggman.com/downloads/examples/three.js/examples/webgl_shader_earth.html
-	https://codepen.io/acauamontiel/pen/yvJoVv
-	*/
+	//https://github.com/typeiii/jquery-csv
 	
     var mouse = new THREE.Vector2(); //used to calculate the current position of the mouse in 2D space
 	var numCraft; // number of satellites
@@ -416,16 +413,12 @@
 				varying vec2 vUv;
 				varying vec3 vNormal;
 				varying vec3 vSunDir;
-
 				uniform vec3 sunDirection;
-
 				void main() {
 					vUv = uv;
 					vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-
 					vNormal = normalMatrix * normal;
 					vSunDir = mat3(viewMatrix) * sunDirection;
-
 					gl_Position = projectionMatrix * mvPosition;
 				}
 			`,
@@ -434,23 +427,16 @@
 				uniform sampler2D nightTexture;
 				
 				//uniform float sunIntensity;
-
 				varying vec2 vUv;
 				varying vec3 vNormal;
 				varying vec3 vSunDir;
-
 				void main(void) {
 					vec3 dayColor = texture2D(dayTexture, vUv).rgb;
 					vec3 nightColor = texture2D(nightTexture, vUv).rgb;
-
 					float cosineAngleSunToNormal = dot(normalize(vNormal), normalize(vSunDir));
-
 					cosineAngleSunToNormal = clamp(cosineAngleSunToNormal * 30.0, -1.0, 1.0);
-
 					float mixAmount = cosineAngleSunToNormal * 0.5 + 0.5;
-
 					vec3 color = mix(nightColor, dayColor, mixAmount); //*sunIntensity
-
 					gl_FragColor = vec4(color, 1.0);
 				}
 			`

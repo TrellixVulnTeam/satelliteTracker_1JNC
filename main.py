@@ -1,6 +1,9 @@
 from flask import Flask, render_template
-from datetime import datetime, timedelta
 import TLE
+from datetime import datetime, timedelta
+import sqlalchemy
+import geoip2.database
+from requests import get
 
 app = Flask(__name__)
 
@@ -9,6 +12,10 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
+    ip = get('https://api.ipify.org').text
+    reader = geoip2.database.Reader('./GeoLite2/GeoLite2-City.mmdb')
+    response = reader.city(ip)
+    uLoc = [response.location.latitude, response.location.longitude]
     timeNow = datetime.utcnow()
     with open('static/data/timestamp.txt', 'r') as f:
         timeOld = f.read().split('\n')
@@ -17,10 +24,8 @@ if __name__ == '__main__':
     timeOld[1] += timedelta(hours=10)
     if timeNow > timeOld[1]:
         timeOld = TLE.timeInfo(timeOld[0])
-        print()
-        print('Recalculating Data')
-        print()
-        TLE.comp()
+        
+        TLE.comp(uLoc)
         TLE.getSunData()
         TLE.writeGroundSites()
         with open('static/data/timestamp.txt', 'w') as f:
