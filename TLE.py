@@ -17,18 +17,15 @@ IDs = [11, 20, 22, 29, 46, 19822, 20580, 22049, 23191, 23439, 23560, 23715, 2549
        44033, 44045, 44057, 44062, 44109, 44229, 44231, 44235, 44259, 44332, 44364, 44374, 44420]
 
 sites = [
-    [29.557857, -95.089023], [48.086873, 11.280641], [18.913628, -155.682263], 
-	[5.224441, -52.776433], [36.065140, 140.127613], [-72.002914, 2.525675], 
-	[-35.401565, 148.981433], [64.753870, -147.345851], 
-	[13.071199, 76.099593]
-]
-
-siteNames = [
-    "NASA Mission Control Center", "German Space Operation Center",
-     "South Point Satellite Station (Hawai'i)", "Guiana Space Center", 
-	 "Tsukuba Space Center (Japan)", "Troll Satellite Station (Antarctica)",
-	 "Canberra Deep Space Complex (Australia)",
-	 "North Pole Satellite Station (Alaska)", "Master Control Facility (India)"
+    ["NASA Mission Control Center",[29.557857, -95.089023]],
+    ["German Space Operation Center",[48.086873, 11.280641]], 
+    ["South Point Satellite Station (Hawai'i)",[19.0, -155.65]], 
+	["Guiana Space Center",[5.224441, -52.776433]],
+    ["Tsukuba Space Center (Japan)",[36.065140, 140.127613]], 
+    ["Troll Satellite Station (Antarctica)",[-72.002914, 2.525675]], 
+	["Canberra Deep Space Complex (Australia)",[-35.401565, 148.981433]],
+    ["North Pole Satellite Station (Alaska)",[64.753870, -147.345851]], 
+	["Master Control Facility (India)", [13.071199, 76.099593]]
 ]
 
 m = 60
@@ -103,9 +100,9 @@ def readTLEfile(TLEfile):
     return theList
 
 
-def comp(u):
-    sites.insert(0, u)
-    siteNames.insert(0, "Your Location")
+def comp(u = None):
+    if (u != None):
+        sites.insert(0, ["Your Location", u])
     TLEs = readTLEfile("static/data/spacecraft.txt")
     numSats = int(len(TLEs) / 3.0)
     with open('static/data/satelliteData.csv', 'w') as f:
@@ -142,8 +139,8 @@ def comp(u):
                     obs = ephem.Observer()
                     obs.date = tt
                     #the following are to change the degrees latitude and longitude to radians
-                    obs.lat = float(k[0])*math.pi/180
-                    obs.lon = float(k[1])*math.pi/180
+                    obs.lat = float(k[1][0])*math.pi/180
+                    obs.lon = float(k[1][1])*math.pi/180
                     sat.compute(obs)
                     f.write(str((sat.alt > 0) * 1) + ',')
                 f.write('\n')
@@ -173,5 +170,5 @@ def writeGroundSites():
         f.write(str(m * hr))
     with open("static/data/groundData.csv", 'w') as f:
         f.write("name,lat,lon\n")
-        for i in range(len(siteNames)):
-            f.write(siteNames[i] + ',' + str(sites[i][0]) + ',' + str(sites[i][1]) + '\n')
+        for i in range(len(sites)):
+            f.write(sites[i][0] + ',' + str(sites[i][1][0]) + ',' + str(sites[i][1][1]) + '\n')

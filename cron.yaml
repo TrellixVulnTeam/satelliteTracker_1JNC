@@ -1,4 +1,0 @@
-cron:
-- description: "update data early"
-  url: tasks.py
-  schedule: every 6 hours synchronized

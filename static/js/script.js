@@ -1,6 +1,22 @@
 (function (window, document, undefined) {
-    var canvas;
-	
+	$.getJSON('https://api.muctool.de/whois', function(data) {
+		fetch('/comm', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify ({
+				"latitude": data['latitude'],
+				"longitude": data['longitude']
+			})
+		}).then(function (response) {
+			return response.text();
+		}).then(function (text) {
+			console.log('POST response: ');
+			console.log(text);
+		});
+	});
+    var canvas;	
 	var bitmap = document.createElement('canvas');
 	var tooltipSprite, g = bitmap.getContext('2d', {antialias: true, depth: false});
     var scene, camera, renderer, controls, manager, light;
@@ -453,27 +469,6 @@
 		planetMesh.receiveShadow = true;
         scene.add(planetMesh);
 		
-		//If I can get THREEx to work, this would create a much more aesthetic atmosphere
-		/*var innerAtmoGeo = planet.clone();
-		var innerAtmoMat = THREEx.createAtmosphereMaterial();
-		innerAtmoMat.uniforms.glowColor.value.set(0x88ffff);
-		innerAtmoMat.uniforms.coeficient.value = 1;
-		innerAtmoMat.uniforms.power.value = 5;
-		innerAtmo p new THREE.Mesh(innerAtmoGeo, innerAtmoMat);
-		innerAtmo.scale.multiplyScalar(1.008);
-		
-		var outerAtmoGeo = planet.clone();
-		var outerAtmoMat = THREEx.createAtmosphereMaterial();
-		outerAtmoMat.side = THREE.BackSide;
-		outerAtmoMat.uniforms.glowColor.value.set(0x0088ff);
-		outerAtmoMat.uniforms.coeficient.value = .68;
-		outerAtmoMat.uniforms.power.value = 10;
-		var outerAtmo = new THREE.Mesh(this.outerAtmosphereGeometry, this.outerAtmosphereMaterial);
-		outerAtmo.scale.multiplyScalar(1.06);
-		
-		planetMesh.add(innerAtmo);
-		planetMesh.add(outerAtmo);*/
-		
 		//creates a transparent sphere just larger than the earth to show the clouds
 		var cloudGeo = new THREE.SphereGeometry(10.08,64,64);
 		var cloudMat = new THREE.MeshPhongMaterial({color: 0xffffff, transparent: true, opacity: .7});
@@ -776,51 +771,56 @@
 	}
 	
 	document.addEventListener( 'mousedown', function(ev) {
-		clickLoc.x = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
-		clickLoc.y = ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;
+		try {
+			clickLoc.x = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
+			clickLoc.y = ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;
+		}
+		catch(e) {}
 	}, false);	
 	document.addEventListener( 'mouseup', function(ev) {
-		xLoc = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
-		yLoc = - ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;		
-		if (clickLoc.x == xLoc && Math.abs((clickLoc.y + yLoc) - 2) < .001) {
-			raycaster.setFromCamera(mouse, camera);
-			//calculate objects intersecting the picking ray
-			var intersects = raycaster.intersectObjects(scene.children);
-			if (mouse.x > -.68) {
-				//only first intersect
-				if (intersects.length != 0) {
-					//console.log(intersects[0].point);
-					if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
-						clickedObj = intersects[0].object.name;
-						satDict[clickedObj].material.opacity = 1.0;
-						/*the bitmap canvas contents will be used for a texture. The name of the
-						clicked spacecraft image or path will be used as the contents of the bitmap canvas.*/
-						metrics = g.measureText(clickedObj);
-						g.clearRect(0,0,bitmap.width, bitmap.height);
-						g.fillStyle = 'white';
-						g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-						g.strokeStyle = 'black';
-						g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-						tooltipSprite.material.map.needsUpdate = true;
-						//renders the sprite after the orbit paths so the sprite doesn't cut out any
-						// of the visible satellite paths
-						tooltipSprite.renderOrder = 100;
-						tooltipSprite.position.copy(intersects[0].point);
-						tooltipSprite.visible = true;
-					}
-					else {
-						for (var i = 1; i < scene.children.length; i++) {
-							if (scene.children[i].type == "Line") {
-								scene.children[i].material.opacity = 0.4;
-							}
+		try {
+			xLoc = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
+			yLoc = - ((ev.clientY - renderer.domElement.offsetTop)/renderer.domElement.clientHeight)*2+1;		
+			if (clickLoc.x == xLoc && Math.abs((clickLoc.y + yLoc) - 2) < .001) {
+				raycaster.setFromCamera(mouse, camera);
+				//calculate objects intersecting the picking ray
+				var intersects = raycaster.intersectObjects(scene.children);
+				if (mouse.x > -.68) {
+					//only first intersect
+					if (intersects.length != 0) {
+						//console.log(intersects[0].point);
+						if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
+							clickedObj = intersects[0].object.name;
+							satDict[clickedObj].material.opacity = 1.0;
+							/*the bitmap canvas contents will be used for a texture. The name of the
+							clicked spacecraft image or path will be used as the contents of the bitmap canvas.*/
+							metrics = g.measureText(clickedObj);
+							g.clearRect(0,0,bitmap.width, bitmap.height);
+							g.fillStyle = 'white';
+							g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+							g.strokeStyle = 'black';
+							g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+							tooltipSprite.material.map.needsUpdate = true;
+							//renders the sprite after the orbit paths so the sprite doesn't cut out any
+							// of the visible satellite paths
+							tooltipSprite.renderOrder = 100;
+							tooltipSprite.position.copy(intersects[0].point);
+							tooltipSprite.visible = true;
 						}
-						clickedObj = null;
-						tooltipSprite.visible = false;
+						else {
+							for (var i = 1; i < scene.children.length; i++) {
+								if (scene.children[i].type == "Line") {
+									scene.children[i].material.opacity = 0.4;
+								}
+							}
+							clickedObj = null;
+							tooltipSprite.visible = false;
+						}
 					}
 				}
 			}
 		}
-		
+		catch(e) {}
 	}, false);
 	
 	//prevents the arrow keys from being used
