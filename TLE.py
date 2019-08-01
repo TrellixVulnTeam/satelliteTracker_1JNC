@@ -7,6 +7,7 @@ import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import math
+import csv
 
 IDs = [11, 20, 22, 29, 46, 19822, 20580, 22049, 23191, 23439, 23560, 23715, 25492, 25544, 25791, 25989, 25994,
        27424, 27540, 27600, 27607, 30580, 30797, 31135, 32275, 32781, 33591, 33752, 36827, 37755, 37790, 37818,
@@ -30,14 +31,9 @@ sites = [
 
 m = 60
 hr = 12
-a = datetime.utcnow() - timedelta(minutes = 1)
-a = a.replace(second=0, microsecond=0)
-dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
     
 
-def timeInfo(timeOld):
-    timeNow = datetime.utcnow()
-
+def timeInfo(timeNow, timeOld):
     # gets new data from space-track.org if it has been longer than a day
     # that TLE data has been requested
     if timeNow > timeOld:
@@ -48,8 +44,9 @@ def timeInfo(timeOld):
         timeOld = datetime(timeNow.year, timeNow.month, timeNow.day, 0, 7, 35) + timedelta(days=1)
         timeOld += timedelta(seconds=.3333333)
         data = st.tle_latest(norad_cat_id=IDs, orderby='object_name', ordinal=1, format='json')
-        d = a + relativedelta(months=+2)
-        decay_epoch = op.inclusive_range(datetime(a.year, a.month, a.day),datetime(d.year, d.month, d.day))
+        timeNow = timeNow.replace(second=0, microsecond=0)
+        d = timeNow + relativedelta(months=+2)
+        decay_epoch = op.inclusive_range(datetime(timeNow.year, timeNow.month, timeNow.day),datetime(d.year, d.month, d.day))
         depr = st.decay(decay_epoch=decay_epoch, orderby='norad_cat_id', format='json')
         satData = json.loads(data)
         deprData = json.loads(depr)
@@ -88,68 +85,15 @@ def timeInfo(timeOld):
                 f.write(b)
                 b = craft['TLE_LINE2'] + '\n'
                 f.write(b)
-    return timeOld
-
-
-
-def readTLEfile(TLEfile):
-    f=open(TLEfile)
-    theList=f.read().split('\n')
-    f.close()
-
-    return theList
-
-
-def comp(u = None):
-    if (u != None):
-        sites.insert(0, ["Your Location", u])
-    TLEs = readTLEfile("static/data/spacecraft.txt")
-    numSats = int(len(TLEs) / 3.0)
-    with open('static/data/satelliteData.csv', 'w') as f:
-        f.write('name,')
-        f.write('latitude,')
-        f.write('longitude,')
-        f.write('elevation,')
-        f.write('year,')
-        f.write('month,')
-        f.write('day,')
-        f.write('hour,')
-        f.write('minute,')
-        f.write('second,')
-        for i in range(len(sites)):
-            f.write('h' + str(i+1) + ',')
-        f.write('\n')
-        for i in range(int(numSats)):
-            temp = []
-            for j in range(3):
-                temp.append(TLEs[i * 3 + j])
-            sat = ephem.readtle(temp[0], temp[1], temp[2])
-
-            for j in range(len(dList)):
-                tt = dList[j]
-                sat.compute(tt)
-                #the following are needed to get the lat and lon in a format that can be written to a file
-                lat = (float(repr(sat.sublat)) * 180 / math.pi)
-                lon = (float(repr(sat.sublong)) * 180 / math.pi)
-                distance = (sat.elevation / 1000)
-                f.write(str(sat.name) + ',' + str(lat) + ',' + str(lon) + ',' + str(distance) + ',')
-                f.write(str(tt.year) + ',' + str(tt.month) + ',' + str(tt.day) + ',' + str(tt.hour) + ',' + str(tt.minute) + ',')
-                f.write(str(0) + ',')
-                for k in sites:
-                    obs = ephem.Observer()
-                    obs.date = tt
-                    #the following are to change the degrees latitude and longitude to radians
-                    obs.lat = float(k[1][0])*math.pi/180
-                    obs.lon = float(k[1][1])*math.pi/180
-                    sat.compute(obs)
-                    f.write(str((sat.alt > 0) * 1) + ',')
-                f.write('\n')
-
-def getSunData():
+        with open('static/data/timestamp.txt', 'w') as f:
+            f.write(str(timeOld))
+            
+def getSunData(dList):
     greenwich = ephem.Observer()
     greenwich.lat = "0"
     greenwich.lon = "0"   
     sun = ephem.Sun(greenwich)
+    sunList = []
     with open('static/data/sun.csv', 'w') as f:
         f.write('lat,')
         f.write('lon,\n')
@@ -163,6 +107,8 @@ def getSunData():
               sun_lon = sun_lon - 360.0
             sun_lat = math.degrees(sun.dec)
             f.write(str(sun_lat) + ',' + str(sun_lon) + '\n')
+            sunList.append([sun_lat,sun_lon])
+    return sunList
             
 def writeGroundSites():
     with open("static/data/orbitLength.csv", 'w') as f:
@@ -172,3 +118,126 @@ def writeGroundSites():
         f.write("name,lat,lon\n")
         for i in range(len(sites)):
             f.write(sites[i][0] + ',' + str(sites[i][1][0]) + ',' + str(sites[i][1][1]) + '\n')
+
+
+
+def readTLEfile(TLEfile):
+    f=open(TLEfile)
+    theList=f.read().split('\n')
+    f.close()
+
+    return theList
+
+
+def comp(loc, update):
+    writeGroundSites()
+    jData = {}
+    satKeys = []
+    dlist = None
+    dateArr = []
+    sitesList = [["Your Location", loc]]
+    TLEs = readTLEfile("static/data/spacecraft.txt")
+    numSats = int(len(TLEs) / 3.0)
+    sitesList.extend(sites)
+    if update:
+        with open('static/data/satelliteData.csv', 'w') as f:
+            a = datetime.utcnow() - timedelta(minutes = 1)
+            a = a.replace(second=0, microsecond=0)
+            dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
+            sunData = getSunData(dList)
+            jData['numSats'] = numSats
+            jData["sun"] = sunData   
+            f.write('name,')
+            f.write('latitude,')
+            f.write('longitude,')
+            f.write('elevation,')
+            f.write('year,')
+            f.write('month,')
+            f.write('day,')
+            f.write('hour,')
+            f.write('minute,')
+            f.write('second,')
+            for i in range(len(sites)):
+                f.write('h' + str(i+1) + ',')
+            f.write('\n')
+    with open('static/data/satelliteData.csv', 'a') as f:
+        for i in range(int(numSats)):
+            spacecraft = {}
+            horizon = []
+            tempHorizon = []
+            tleData = []
+            for j in range(3):
+                tleData.append(TLEs[i * 3 + j])
+            sat = ephem.readtle(tleData[0], tleData[1], tleData[2])
+            satKeys.append(sat.name)
+            if update:
+                pos = []
+                jData['update'] = "true"
+                for j in range(len(dList)):
+                    tt = dList[j]
+                    if i == 0 and j == 0:
+                        dateArr.append(tt.year)
+                        dateArr.append(tt.month)
+                        dateArr.append(tt.day)
+                        dateArr.append(tt.hour)
+                        dateArr.append(tt.minute)
+                        dateArr.append(tt.second)
+                        jData['time'] = dateArr
+                    sat.compute(tt)
+                    #the following are needed to get the lat and lon in a format that can be written to a file
+                    lat = (float(repr(sat.sublat)) * 180 / math.pi)
+                    lon = (float(repr(sat.sublong)) * 180 / math.pi)
+                    distance = (sat.elevation / 1000)
+                    pos.append([lat,lon,distance])
+                    f.write(str(sat.name) + ',' + str(lat) + ',' + str(lon) + ',' + str(distance) + ',')
+                    f.write(str(tt.year) + ',' + str(tt.month) + ',' + str(tt.day) + ',' + str(tt.hour) + ',' + str(tt.minute) + ',')
+                    f.write(str(0) + ',')
+                    for l,k in enumerate(sitesList):
+                        obs = ephem.Observer()
+                        obs.date = tt
+                        #the following are to change the degrees latitude and longitude to radians
+                        obs.lat = float(k[1][0])*math.pi/180
+                        obs.lon = float(k[1][1])*math.pi/180
+                        sat.compute(obs)
+                        if j == 0:
+                            tempHorizon.append([])
+                        tempHorizon[l].append(((sat.alt > 0) * 1))
+                        if k[0] != "Your Location":
+                            f.write(str((sat.alt > 0) * 1) + ',')
+                        #append sat name with sat horizon data to JSON might want to switch for loop for dList and
+                        #for loop for sitesList
+                    f.write('\n')
+                spacecraft["pos"] = pos
+                for n, name in enumerate(sitesList):
+                    horizon.append([[(sitesList[n][0])],tempHorizon[n]])
+                spacecraft["horizon"] = horizon
+                jData[sat.name] = spacecraft
+            else:
+                """essentially only used if it has been less than six hours from when the app is started
+                that data has been calculated. This just grabs the above/below horizon data for the user's
+                location and sends it back. This should cut down on calculation time so the screen isn't
+                loading for quite so long each time. This situation should only come up when a user
+                is using a local copy of the app and they have had it turned off for longer than 6 hours.
+                Otherwise, the app will recalculate every 6 hours while it is running."""
+                with open('static/data/satelliteData.csv', 'r') as f:
+                    reader = csv.reader(f)
+                    header = next(reader)
+                    row = next(reader)
+                    b = datetime(int(row[4]), int(row[5]), int(row[6]), int(row[7]), int(row[8]), int(row[9]))
+                    dList = [b + timedelta(minutes=x) for x in range(0, (m*hr))]
+                jData['update'] = "false"
+                for j in range(len(dList)):
+                    tt = dList[j]
+                    k=sitesList[0]
+                    obs = ephem.Observer()
+                    obs.date = tt
+                    #the following are to change the degrees latitude and longitude to radians
+                    obs.lat = float(k[1][0])*math.pi/180
+                    obs.lon = float(k[1][1])*math.pi/180
+                    sat.compute(obs)
+                    tempHorizon.append(((sat.alt > 0) * 1))
+                jData[sat.name] = tempHorizon
+        jData["OP"] = m*hr
+        jData["satKeys"] = satKeys
+        jData["sites"] = sitesList
+    return jData
