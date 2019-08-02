@@ -17,6 +17,7 @@
 	var numCraft; // number of satellites
 	var numOrbitalPts; //number of points for each satellite path
 	var satData = []; //the array holding all the satellite data after parsing the csv
+	horizon = []; //the array holding the data regarding whether a satellite is above/below the horizon for each ground site
 	var spacecraft = []; //an array of the names of the satellites (for ease of use across multiple functions)
 	var satTime; // the first datetime in the satellite data. Used to calculate an index in updateSat() and visibilitychange eventlistener
 	var sites = []; //the array holding all the groundsite data after parsing the csv
@@ -26,9 +27,18 @@
 	var satImg = {}; // dictionary of satellite sprites
 	var groundSites = {}; // dictionary of groundsite markers
 	var clickedObj = null; // the line that is currently clicked
-	var uniforms;
-	var clickLoc = new THREE.Vector2();
-	horizon = [];
+	var uniforms; //used for the day/night shader
+	var clickLoc = new THREE.Vector2(); //used in the 'mouseup' eventlistener
+	
+	firstRun = true; //boolean to determine whether this is the first time we are asking for orbit calculations
+	nextRuns = false; //boolean to determine whether we are now past the first orbit calculation
+	
+	var t = new Date();
+	t.setHours(0);
+	t.setMinutes(8);
+	while (t.getTime() < new Date().getTime()) {
+		t.setHours(t.getHours() + 6);
+	}
 	
      // Three.js setup procedure
     function setupScene() {
@@ -111,29 +121,19 @@
 			var satName = satData[i][0];
 			//this gets the next position in the satDict dictionary, subtracts the current position to get the distance between the two, and multiplies by minuteFraction
 			//before adding that new value back to the current position. That gives us the correct position at the current time.
-			satImg[satName].position.x = ((satDict[satName].geometry.vertices[timeDiff+1].x-satDict[satName].geometry.vertices[timeDiff].x)*minuteFraction + satDict[satName].geometry.vertices[timeDiff].x);
-			satImg[satName].position.y = ((satDict[satName].geometry.vertices[timeDiff+1].y-satDict[satName].geometry.vertices[timeDiff].y)*minuteFraction + satDict[satName].geometry.vertices[timeDiff].y);
-			satImg[satName].position.z = ((satDict[satName].geometry.vertices[timeDiff+1].z-satDict[satName].geometry.vertices[timeDiff].z)*minuteFraction + satDict[satName].geometry.vertices[timeDiff].z);
+			satImg[satName].position.x = ((satDict[satName].geometry.vertices[timeDiff+2].x-satDict[satName].geometry.vertices[timeDiff+1].x)*minuteFraction + satDict[satName].geometry.vertices[timeDiff+1].x);
+			satImg[satName].position.y = ((satDict[satName].geometry.vertices[timeDiff+2].y-satDict[satName].geometry.vertices[timeDiff+1].y)*minuteFraction + satDict[satName].geometry.vertices[timeDiff+1].y);
+			satImg[satName].position.z = ((satDict[satName].geometry.vertices[timeDiff+2].z-satDict[satName].geometry.vertices[timeDiff+1].z)*minuteFraction + satDict[satName].geometry.vertices[timeDiff+1].z);
 			//if the satellite is not the ISS, update the satellite sprite's size based on its current distance from the earth
 			if (satName != "ISS (ZARYA)") {
 				var r = ((satData[i][1][timeDiff][2]+6378)*10/6378)/12;
 				if (r > 10) r = 10;
 				satImg[satName].scale = (r, r, 1);
 			}
-			else {
-				for (var j = 0; j < numOrbitalPts.length; j++) {
-					console.log(satData[i]);
-				}
-
-				//just for verification purposes, the following outputs the ISS' current latitude and longitude to check against other sources
-				lla = ((satData[i][1][(timediff+1)][0] - satData[i][1][timediff][0])*minuteFraction + satData[i][1][timediff][0]);
-				llo = ((satData[i][1][(timediff+1)][1] - satData[i][1][timediff][1])*minuteFraction + satData[i][1][timediff][1]);
-				console.log("right: ", lla, llo);
-			}
 		}
-		light.position.x = (sunPos[timeDiff].x - sunPos[timeDiff-1].x)*minuteFraction + sunPos[timeDiff-1].x;
-		light.position.y = (sunPos[timeDiff].y - sunPos[timeDiff-1].y)*minuteFraction + sunPos[timeDiff-1].y;
-		light.position.z = (sunPos[timeDiff].z - sunPos[timeDiff-1].z)*minuteFraction + sunPos[timeDiff-1].z;
+		light.position.x = (sunPos[timeDiff+1].x - sunPos[timeDiff].x)*minuteFraction + sunPos[timeDiff].x;
+		light.position.y = (sunPos[timeDiff+1].y - sunPos[timeDiff].y)*minuteFraction + sunPos[timeDiff].y;
+		light.position.z = (sunPos[timeDiff+1].z - sunPos[timeDiff].z)*minuteFraction + sunPos[timeDiff].z;
 		//updates the earth's day/night shader to be consistent with the sun's position
 		uniforms.sunDirection.value.copy(light.position);
 		uniforms.sunDirection.value.normalize();
@@ -146,6 +146,7 @@
 		}
 		return false;
 	}
+
 	
 	//changes the parts of the satellite paths red that are visible to currently active groundsites.
 	//also changes red sections back to blue for groundsites that are deselected
@@ -157,7 +158,7 @@
 			for (var j = 0; j < numOrbitalPts; j++) {
 				var current = 0;
 				for (var k = 0; k < horizon[i].length; k++) {
-					if (searchBox(0, checkboxes)) {
+					if (searchBox(k, checkboxes)) {
 						current += horizon[i][k][j];
 					}
 				}
@@ -471,70 +472,92 @@
 			var geometry = new THREE.Geometry();
 			var satName = spacecraft[i];
 			for (var j = 0; j < numOrbitalPts; j++) {				
-				
 				r = ((satData[i][1][j][2]+6378)*10/6378);
 				lat = satData[i][1][j][0];
 				lon = satData[i][1][j][1];
 				phi = (90-lat)*(Math.PI/180);
 				theta = (lon+180)*(Math.PI/180);
-
 				x = -((r) * Math.sin(phi)*Math.cos(theta));
 				z = ((r) * Math.sin(phi)*Math.sin(theta));
 				y = ((r) * Math.cos(phi));
 				
 				var vert = new THREE.Vector3(x, y, z);
-				
 				geometry.colors[j] = new THREE.Color(0x0000ff);
 				geometry.vertices.push(vert);
-				
 				if (j == timeDiff) {
-					//this adds the satellite sprites at the location on each path where the satellite
-					//should be in real time.
-					if (satName == "ISS (ZARYA)") {
-						var spriteMap = new THREE.TextureLoader().load( 'static/img/iss.png' );
-						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
-						var sprite = new THREE.Sprite( spriteMaterial);
-						sprite.scale.set(1, 1, 1);
-						sprite.position.set(x, y, z);
-						sprite.renderOrder = 1;
-						scene.add( sprite );
-						sprite.visible = false;
+					if (!nextRuns) {
+						//this adds the satellite sprites at the location on each path where the satellite
+						//should be in real time.
+						if (satName == "ISS (ZARYA)") {
+							var spriteMap = new THREE.TextureLoader().load( 'static/img/iss.png' );
+							var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff } );
+							var sprite = new THREE.Sprite( spriteMaterial);
+							sprite.scale.set(1, 1, 1);
+							sprite.position.set(x, y, z);
+							sprite.renderOrder = 1;
+							scene.add( sprite );
+							sprite.visible = false;
+						}
+						else {
+							
+							var imgLoc = 'static/img/satellite.png';
+							var spriteMap = new THREE.TextureLoader().load( imgLoc );
+							var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff} );
+							var sprite = new THREE.Sprite( spriteMaterial );
+							var imgScale = r/12;
+							if (imgScale > 10) {
+								imgScale = 10;
+							}
+							//the sprite is scaled accordingly to how far away it is from the earth.
+							//This just makes it easier to see. Position and scale are updated in the updateSat() function
+							sprite.scale.set(imgScale, imgScale, 1);
+							sprite.position.set(x, y, z);
+							sprite.renderOrder = 100;
+							scene.add( sprite );
+							sprite.visible = false;
+						}
+						sprite.name = satName;
+						//adds the sprite to a dictionary for ease of use later
+						satImg[satName] = sprite;
 					}
 					else {
-						
-						var imgLoc = 'static/img/satellite.png';
-						var spriteMap = new THREE.TextureLoader().load( imgLoc );
-						var spriteMaterial = new THREE.SpriteMaterial( { map: spriteMap, color: 0xffffff} );
-						var sprite = new THREE.Sprite( spriteMaterial );
-						var imgScale = r/12;
-						if (imgScale > 10) {
-							imgScale = 10;
+						satImg[satName].position.x = x;
+						satImg[satName].position.y = y;
+						satImg[satName].position.z = z;
+						if (satName != "ISS (ZARYA)") {
+							var r = ((satData[i][1][timeDiff][2]+6378)*10/6378)/12;
+							if (r > 10) r = 10;
+							satImg[satName].scale = (r, r, 1);
 						}
-						//the sprite is scaled accordingly to how far away it is from the earth.
-						//This just makes it easier to see. Position and scale are updated in the updateSat() function
-						sprite.scale.set(imgScale, imgScale, 1);
-						sprite.position.set(x, y, z);
-						sprite.renderOrder = 100;
-						scene.add( sprite );
-						sprite.visible = false;
+						satImg[satName].needsUpdate = true;
 					}
-					sprite.name = satName;
-					//adds the sprite to a dictionary for ease of use later
-					satImg[satName] = sprite;
 				}
 			}
 			// creates the line using the orbital points we gave it and adds the line to the scene.
 			// the line is not visible when the app first starts.
 			var line = new THREE.Line( geometry, material );
 			line.name = satName;
-			//line.renderOrder = 1;
+			if (nextRuns) {
+				if (satDict[satName].visible) line.visible = true;
+				else line.visible = false;
+				//line.renderOrder = 1;
+				scene.remove(satDict[satName]);
+			}
 			scene.add(line);
-			line.visible = false;
 			// adds the line to a dictionary for easy access later
 			satDict[satName] = line;
-			//spacecraft is a list of spacecraft names that makes it easier to set up the checkboxes
-			//and their functionality
-			spacecraft.push(satName);
+			
+			if (!nextRuns) {
+				line.visible = false;
+				//spacecraft is a list of spacecraft names that makes it easier to set up the checkboxes
+				//and their functionality
+				spacecraft.push(satName);
+			}
+			satDict[satName].geometry.needsUpdate = true;
+		}
+		if (nextRuns) {
+			var checkboxes = document.getElementsByClassName("gsCheck");
+			checkForAllChecked(checkboxes, "gsAll", "gsCheck");
 		}
 	}
 	
@@ -547,11 +570,11 @@
         };
         setupScene();
         setupControls();
-        createEarth();
 		satPath();
 		groundSite();
 		gsList();
 		craftList();
+		createEarth();
     }
 	
 	//checks to see if the mouse is hovering over an element on the canvas
@@ -575,6 +598,73 @@
         }
     }
 	
+	function calculate() {
+		$.getJSON('http://api.ipstack.com/check?access_key=', function(data) {
+			fetch('/comm', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify ({
+					"latitude": data['latitude'],
+					"longitude": data['longitude'],
+					/*TODO: need to check how long ago the data was calculated, and if it is within 6 hours of now.
+					If it is, we need to send "true" as the value for "run", meaning it has been run within the
+					last 6 hours. Otherwise, send "false". One idea would be to save the date to file in the form
+					Date().getTime(), as this gives milliseconds from the epoch. It would be easy to add 5.5-6 hours
+					worth of milliseconds to this before writing to a file, and then check it against the current time
+					the next time the project is started up to see whether we need to calculate all of the data again,
+					or if we can calculate the data from the user's location and go from there.
+					*/
+					"runRecently": "false"
+				})
+			}).then(res => res.json())
+			.then(function (jsonData) {
+				if (jsonData.update == "true") {
+					satData = [];
+					horizon = [];
+					sunArr = [];
+					numCraft = jsonData.numSats;
+					numOrbitalPts = jsonData.OP;
+					spacecraft = jsonData.satKeys;
+					var tm = jsonData.time;
+					//to get the correct UTC time for satTime, subtract a month and a day, add 18 hours and add 1 minute.
+					// JavaScript counts months from 0-11, while python counts them from 1-12.
+					satTime = new Date(tm[0], tm[1]-1, tm[2]-1, tm[3]+18, tm[4]+1, tm[5]).getTime();
+					sites = jsonData.sites;
+					sunArr = jsonData.sun;
+					
+					for (var i = 0; i < spacecraft.length; i++) {
+						var craft = jsonData[spacecraft[i]];
+						pos = craft.pos;
+						pos = [spacecraft[i], pos];
+						satData.push(pos);
+						h = craft.horizon;
+						for (var j = 0; j < h.length; j++) {
+							h[j] = h[j][1];
+						}
+						horizon.push(h);
+					}
+					if (firstRun) {
+						firstRun = false;
+						init();
+					}
+					else {
+						satPath();
+					}
+				}
+				else {
+					/*TODO, get the already calculated data, probably the data saved to the csv, and populate 
+					the orbits with it, adding in the user's location and horizon data. At this point, a
+					database will probably only be useful to use if there is a significant speedup, even
+					if using a bunch of files to save data doesn't look very professional.*/
+				}
+			});
+		});
+	}
+	
+	calculate();
+	
     function render() {
         requestAnimationFrame(render);
 		try {
@@ -585,51 +675,13 @@
         if (mouse.x < sceneW) {
             checkForRaycasts();
         }
+		if (new Date().getTime() > t.getTime()) {
+			t.setHours(t.getHours() + 6);
+			nextRuns = true;
+			calculate();
+		}
         renderer.render(scene, camera);
     }
-	
-	$.getJSON('http://api.ipstack.com/check?access_key=f8bb83b83559e3d5f53b98987b95f25a', function(data) {
-		var t = new Date();
-		fetch('/comm', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify ({
-				"latitude": data['latitude'],
-				"longitude": data['longitude'],
-				/*need to check how long ago the data was calculated, and if it is within 6 hours of now.
-				If it is, we need to send "true" as the value for "run", meaning it has been run within the
-				last 6 hours. Otherwise, send "false".
-				*/
-				"run": "false"
-			})
-		}).then(res => res.json())
-		.then(function (jsonData) {
-			numCraft = jsonData.numSats;
-			numOrbitalPts = jsonData.OP;
-			spacecraft = jsonData.satKeys;
-			var tm = jsonData.time;
-			//to get the correct UTC time for satTime, subtract a month and a day, add 18 hours and 1 minute
-			satTime = new Date(tm[0], tm[1]-1, tm[2]-1, tm[3]+18, tm[4]+1, tm[5]).getTime();
-			sites = jsonData.sites;
-			sunArr = jsonData.sun;
-			
-			for (var i = 0; i < spacecraft.length; i++) {
-				var craft = jsonData[spacecraft[i]];
-				pos = craft.pos;
-				pos = [spacecraft[i], pos];
-				satData.push(pos);
-				h = craft.horizon;
-				for (var j = 0; j < h.length; j++) {
-					h[j] = h[j][1];
-				}
-				horizon.push(h);
-			}
-			console.log(satTime);
-			init();
-		});
-	});
 	
 	document.querySelector('#gsAll').onclick = function (ev) {
 		try{checkAll(ev.target.checked, 'gsCheck');}
@@ -664,6 +716,7 @@
 		catch(e) {}
 	}
 	
+	//sets the clickLoc variable for use in the "mouseup eventlistener
 	document.addEventListener( 'mousedown', function(ev) {
 		try {
 			clickLoc.x = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
@@ -671,6 +724,8 @@
 		}
 		catch(e) {}
 	}, false);	
+	/*uses the clickLoc to determine whether the mouse was clicked and dragged or just clicked. This is used
+	to leave a selected path lit up when the user is moving the globe around.*/
 	document.addEventListener( 'mouseup', function(ev) {
 		try {
 			xLoc = ((ev.clientX - renderer.domElement.offsetLeft)/renderer.domElement.clientWidth)*2-1;
@@ -682,7 +737,7 @@
 				if (mouse.x > -.68) {
 					//only first intersect
 					if (intersects.length != 0) {
-						//console.log(intersects[0].point);
+						//console.log(intersects[0].point); //used to show the x,y,z coordinate of the mouse click
 						if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
 							clickedObj = intersects[0].object.name;
 							satDict[clickedObj].material.opacity = 1.0;

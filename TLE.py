@@ -33,14 +33,12 @@ m = 60
 hr = 12
     
 
-def timeInfo(timeNow, timeOld):
+def timeInfo(timeNow, timeOld, ST):
     # gets new data from space-track.org if it has been longer than a day
     # that TLE data has been requested
     if timeNow > timeOld:
         # TODO: validate username and password with spacetrack API
-        user = input("spacetrack username: ")
-        pd = input("password: ")
-        st = SpaceTrackClient(user, pd)
+        st = SpaceTrackClient(ST[0], ST[1])
         timeOld = datetime(timeNow.year, timeNow.month, timeNow.day, 0, 7, 35) + timedelta(days=1)
         timeOld += timedelta(seconds=.3333333)
         data = st.tle_latest(norad_cat_id=IDs, orderby='object_name', ordinal=1, format='json')
@@ -141,6 +139,8 @@ def comp(loc, update):
     sitesList.extend(sites)
     if update:
         with open('static/data/satelliteData.csv', 'w') as f:
+            #We are starting the time array from one minute earlier than the current time, meaning
+            #we will need to add a minute in JavaScript when we build the date again.
             a = datetime.utcnow() - timedelta(minutes = 1)
             a = a.replace(second=0, microsecond=0)
             dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
@@ -204,8 +204,6 @@ def comp(loc, update):
                         tempHorizon[l].append(((sat.alt > 0) * 1))
                         if k[0] != "Your Location":
                             f.write(str((sat.alt > 0) * 1) + ',')
-                        #append sat name with sat horizon data to JSON might want to switch for loop for dList and
-                        #for loop for sitesList
                     f.write('\n')
                 spacecraft["pos"] = pos
                 for n, name in enumerate(sitesList):
@@ -213,12 +211,9 @@ def comp(loc, update):
                 spacecraft["horizon"] = horizon
                 jData[sat.name] = spacecraft
             else:
-                """essentially only used if it has been less than six hours from when the app is started
-                that data has been calculated. This just grabs the above/below horizon data for the user's
-                location and sends it back. This should cut down on calculation time so the screen isn't
-                loading for quite so long each time. This situation should only come up when a user
-                is using a local copy of the app and they have had it turned off for longer than 6 hours.
-                Otherwise, the app will recalculate every 6 hours while it is running."""
+                """Will really only be used if the application is started up after less than
+                six hours from the last time satellite data was calculated. This just calculates
+                the above/below horizon data for the user's location and nothing else"""
                 with open('static/data/satelliteData.csv', 'r') as f:
                     reader = csv.reader(f)
                     header = next(reader)
@@ -231,7 +226,7 @@ def comp(loc, update):
                     k=sitesList[0]
                     obs = ephem.Observer()
                     obs.date = tt
-                    #the following are to change the degrees latitude and longitude to radians
+                    #the observer needs angles in radians, and the angles in the sites list is in degrees.
                     obs.lat = float(k[1][0])*math.pi/180
                     obs.lon = float(k[1][1])*math.pi/180
                     sat.compute(obs)
