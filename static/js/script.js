@@ -599,31 +599,34 @@
     }
 	
 	function calculate() {
-		$.getJSON('http://api.ipstack.com/check?access_key=', function(data) {
-			fetch('/comm', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify ({
-					"latitude": data['latitude'],
-					"longitude": data['longitude'],
-					/*TODO: need to check how long ago the data was calculated, and if it is within 6 hours of now.
-					If it is, we need to send "true" as the value for "run", meaning it has been run within the
-					last 6 hours. Otherwise, send "false". One idea would be to save the date to file in the form
-					Date().getTime(), as this gives milliseconds from the epoch. It would be easy to add 5.5-6 hours
-					worth of milliseconds to this before writing to a file, and then check it against the current time
-					the next time the project is started up to see whether we need to calculate all of the data again,
-					or if we can calculate the data from the user's location and go from there.
-					*/
-					"runRecently": "false"
-				})
-			}).then(res => res.json())
-			.then(function (jsonData) {
-				if (jsonData.update == "true") {
+		//grabs the ipstack access key and adds it to the ipstack api connection string
+		fetch('/access', {
+			method: 'POST',
+					headers: {
+						'Content-Type': 'application/text'
+					}
+		}).then(res => res.text())
+		.then(function (accKey) {
+			//grabs the user's latitude and longitude based off of their IP Address
+			$.getJSON('http://api.ipstack.com/check?access_key='+accKey, function(data) {
+				//sends a request to the /comm url in main.py and requests orbital data. The user's
+				//longitude and latitude are sent with to calculate data based off their location.
+				fetch('/comm', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify ({
+						"latitude": data['latitude'],
+						"longitude": data['longitude']
+					})
+				}).then(res => res.json())
+				.then(function (jsonData) {
+					//the request's response is assigned to jsonData, and separated out to be used later.
 					satData = [];
 					horizon = [];
 					sunArr = [];
+					
 					numCraft = jsonData.numSats;
 					numOrbitalPts = jsonData.OP;
 					spacecraft = jsonData.satKeys;
@@ -645,6 +648,9 @@
 						}
 						horizon.push(h);
 					}
+					/*if this is run when the application is first starting up, run init(). Otherwise, replace
+					previous orbit paths with the new data by using satPath(). Any time the webpage is refreshed,
+					firstRun will be set to true again.*/
 					if (firstRun) {
 						firstRun = false;
 						init();
@@ -652,18 +658,10 @@
 					else {
 						satPath();
 					}
-				}
-				else {
-					/*TODO, get the already calculated data, probably the data saved to the csv, and populate 
-					the orbits with it, adding in the user's location and horizon data. At this point, a
-					database will probably only be useful to use if there is a significant speedup, even
-					if using a bunch of files to save data doesn't look very professional.*/
-				}
+				});
 			});
 		});
 	}
-	
-	calculate();
 	
     function render() {
         requestAnimationFrame(render);
@@ -796,4 +794,6 @@
 		}
         catch(e) {}
     }, false);
+	
+	calculate();
 })(window, document);

@@ -8,7 +8,6 @@ itsdangerous==1.1.0
 Jinja2==2.10.1
 Logbook==1.4.3
 MarkupSafe==1.1.1
-maxminddb==1.4.1
 python-dateutil==2.8.0
 ratelimiter==1.2.0.post0
 Represent==1.6.0
