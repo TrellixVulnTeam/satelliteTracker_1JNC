@@ -7,6 +7,7 @@ import json
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import math
+import copy
 
 IDs = [11, 20, 22, 29, 46, 19822, 20580, 22049, 23191, 23439, 23560, 23715, 25492, 25544, 25791, 25989, 25994,
        27424, 27540, 27600, 27607, 30580, 30797, 31135, 32275, 32781, 33591, 33752, 36827, 37755, 37790, 37818,
@@ -32,7 +33,6 @@ def timeInfo(timeNow, timeOld, ST):
     # gets new data from space-track.org if it has been longer than a day
     # that TLE data has been requested
     if timeNow > timeOld:
-        # TODO: validate username and password with spacetrack API
         st = SpaceTrackClient(ST[0], ST[1])
         timeOld = datetime(timeNow.year, timeNow.month, timeNow.day, 0, 7, 35) + timedelta(days=1)
         timeOld += timedelta(seconds=.3333333)
@@ -76,8 +76,7 @@ def timeInfo(timeNow, timeOld, ST):
                 f.write(b)
                 b = craft['TLE_LINE2'] + '\n'
                 f.write(b)
-        with open('static/data/timestamp.txt', 'w') as f:
-            f.write(str(timeOld) + '\n')
+    return timeOld
             
 def getSunData(dList):
     greenwich = ephem.Observer()
@@ -85,20 +84,16 @@ def getSunData(dList):
     greenwich.lon = "0"   
     sun = ephem.Sun(greenwich)
     sunList = []
-    with open('static/data/sun.csv', 'w') as f:
-        f.write('lat,')
-        f.write('lon,\n')
-        for j in range(len(dList)):
-            greenwich.date = dList[j]
-            sun.compute(greenwich.date)
-            sun_lon = math.degrees(sun.ra - greenwich.sidereal_time() )
-            if sun_lon < -180.0 :
-              sun_lon = 360.0 + sun_lon 
-            elif sun_lon > 180.0 :
-              sun_lon = sun_lon - 360.0
-            sun_lat = math.degrees(sun.dec)
-            f.write(str(sun_lat) + ',' + str(sun_lon) + '\n')
-            sunList.append([sun_lat,sun_lon])
+    for j in range(len(dList)):
+        greenwich.date = dList[j]
+        sun.compute(greenwich.date)
+        sun_lon = math.degrees(sun.ra - greenwich.sidereal_time() )
+        if sun_lon < -180.0 :
+          sun_lon = 360.0 + sun_lon 
+        elif sun_lon > 180.0 :
+          sun_lon = sun_lon - 360.0
+        sun_lat = math.degrees(sun.dec)
+        sunList.append([sun_lat,sun_lon])
     return sunList
 
 def comp(loc, run):
@@ -114,25 +109,43 @@ def comp(loc, run):
     numSats = int(len(TLEs) / 3.0)
     sitesList.extend(sites)
     if run == None:
+        obs = ephem.Observer()
+        #the following are to change the degrees latitude and longitude to radians
+        obs.lat = float(loc[0])*math.pi/180
+        obs.lon = float(loc[1])*math.pi/180
         with open('static/data/data.json', 'r') as f:
             loaded = f.read()
         jData = json.loads(loaded)
+        beginTime = jData["time"]
+        a = datetime(beginTime[0], beginTime[1], beginTime[2], beginTime[3], beginTime[4], beginTime[5])
+        dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
+        for i in range(int(numSats)):
+            satName = jData["satKeys"][i]
+            userLoc = jData[satName]["horizon"][0][1]
+            tleData = []
+            for j in range(3):
+                tleData.append(TLEs[i * 3 + j])
+            sat = ephem.readtle(tleData[0], tleData[1], tleData[2])
+            for j in range(len(dList)):
+                tt = dList[j]
+                obs.date = tt
+                sat.compute(obs)
+                jData[satName]["horizon"][0][1].append(((sat.alt > 0) * 1))
     else:
-        with open('static/data/timestamp.txt', 'r') as f:
-            timeOld = f.read()
-        while run < datetime.utcnow():
-            run = run + timedelta(hours=6)
+        while run[1] < datetime.utcnow():
+            run[1] = run[1] + timedelta(hours=6)
         with open('static/data/timestamp.txt', 'w') as f:
-            f.write(str(timeOld))
-            f.write(str(run))
+            f.write("")
+        with open('static/data/timestamp.txt', 'w') as f:
+            f.write(str(run[0]) + '\n')
+            f.write(str(run[1]))
         #We are starting the time array from one minute earlier than the current time, meaning
         #we will need to add a minute in JavaScript when we build the date again.
         a = datetime.utcnow() - timedelta(minutes = 1)
         a = a.replace(second=0, microsecond=0)
         dList = [a + timedelta(minutes=x) for x in range(0, (m*hr))]
-        sunData = getSunData(dList)
         jData['numSats'] = numSats
-        jData["sun"] = sunData
+        jData["sun"] = getSunData(dList)
         for i in range(int(numSats)):
             spacecraft = {}
             horizon = []
@@ -176,7 +189,12 @@ def comp(loc, run):
             jData[sat.name] = spacecraft
         jData["OP"] = m*hr
         jData["satKeys"] = satKeys
-        jData["sites"] = sitesList
-        with open('static/data/data.json', 'w', encoding='utf-8') as f:
-            json.dump(jData, f, ensure_ascii=False, indent=4)
+    jData["sites"] = sitesList
+    tempJson = copy.deepcopy(jData)
+    tempJson["sites"][0][1] = []
+    for i in range(int(numSats)):
+        satName = tempJson["satKeys"][i]
+        tempJson[satName]["horizon"][0][1] = []
+    with open('static/data/data.json', 'w', encoding='utf-8') as f:
+        json.dump(tempJson, f, ensure_ascii=False, indent=4)
     return jData

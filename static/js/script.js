@@ -17,7 +17,7 @@
 	var numCraft; // number of satellites
 	var numOrbitalPts; //number of points for each satellite path
 	var satData = []; //the array holding all the satellite data after parsing the csv
-	horizon = []; //the array holding the data regarding whether a satellite is above/below the horizon for each ground site
+	var horizon = []; //the array holding the data regarding whether a satellite is above/below the horizon for each ground site
 	var spacecraft = []; //an array of the names of the satellites (for ease of use across multiple functions)
 	var satTime; // the first datetime in the satellite data. Used to calculate an index in updateSat() and visibilitychange eventlistener
 	var sites = []; //the array holding all the groundsite data after parsing the csv
@@ -54,8 +54,9 @@
 		texture.needsUpdate = true;
 		//var spriteMap = new THREE.TextureLoader().load( tex );
 		var spriteMaterial = new THREE.SpriteMaterial( { map: texture, sizeAttenuation: false} );
-		tooltipSprite = new THREE.Sprite( spriteMaterial);
+		tooltipSprite = new THREE.Sprite(spriteMaterial);
 		tooltipSprite.visible = false;
+		tooltipSprite.name = "tooltip";
 		scene.add(tooltipSprite);
         renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
         renderer.setSize(sceneW, windowH);
@@ -590,9 +591,24 @@
         var intersects = raycaster.intersectObjects(scene.children);
         //only first intersect
         if (intersects.length != 0) {
+			//if the mouse isn't over the left-hand menu
 			if (mouse.x > -.68) {
-				if (intersects[0].object.type == "Line") {
-					intersects[0].object.material.opacity = 1.0;
+				//if the About checkbox is checked
+				if (document.getElementById("check").checked) {
+					//if the mouse is not over the About box
+					if (mouse.x < .327 || mouse.y < .25) {
+						if (intersects[0].object.type == "Line") {
+							intersects[0].object.material.opacity = 1.0;
+						}
+					}
+				}
+				else {
+					//if the mouse is not over the About checkbox
+					if (mouse.x < .617 || mouse.y < .862) {
+						if (intersects[0].object.type == "Line") {
+							intersects[0].object.material.opacity = 1.0;
+						}
+					}
 				}
 			}
         }
@@ -733,41 +749,122 @@
 				//calculate objects intersecting the picking ray
 				var intersects = raycaster.intersectObjects(scene.children);
 				if (mouse.x > -.68) {
-					//only first intersect
-					if (intersects.length != 0) {
-						//console.log(intersects[0].point); //used to show the x,y,z coordinate of the mouse click
-						if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
-							clickedObj = intersects[0].object.name;
-							satDict[clickedObj].material.opacity = 1.0;
-							/*the bitmap canvas contents will be used for a texture. The name of the
-							clicked spacecraft image or path will be used as the contents of the bitmap canvas.*/
-							metrics = g.measureText(clickedObj);
-							g.clearRect(0,0,bitmap.width, bitmap.height);
-							g.fillStyle = 'white';
-							g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-							g.strokeStyle = 'black';
-							g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-							tooltipSprite.material.map.needsUpdate = true;
-							//renders the sprite after the orbit paths so the sprite doesn't cut out any
-							// of the visible satellite paths
-							tooltipSprite.renderOrder = 100;
-							tooltipSprite.position.copy(intersects[0].point);
-							tooltipSprite.visible = true;
-						}
-						else {
-							for (var i = 1; i < scene.children.length; i++) {
-								if (scene.children[i].type == "Line") {
-									scene.children[i].material.opacity = 0.4;
+					if (document.getElementById("check").checked) {
+						if (mouse.x < .327 || mouse.y < .25) {
+							//only first intersect
+							if (intersects.length != 0) {
+								//console.log(intersects[0].point); //used to show the x,y,z coordinate of the mouse click
+								if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
+									if (intersects[0].object.name != "tooltip") {
+										clickedObj = intersects[0].object.name;
+										satDict[clickedObj].material.opacity = 1.0;
+										/*the bitmap canvas contents will be used for a texture. The name of the
+										clicked spacecraft image or path will be used as the contents of the bitmap canvas.*/
+										metrics = g.measureText(clickedObj);
+										g.clearRect(0,0,bitmap.width, bitmap.height);
+										g.fillStyle = 'white';
+										g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+										g.strokeStyle = 'black';
+										g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+										tooltipSprite.material.map.needsUpdate = true;
+										//renders the sprite after the orbit paths so the sprite doesn't cut out any
+										// of the visible satellite paths
+										tooltipSprite.renderOrder = 100;
+										tooltipSprite.position.copy(intersects[0].point);
+										tooltipSprite.visible = true;
+									}
+								}
+								else {
+									for (var i = 1; i < scene.children.length; i++) {
+										if (scene.children[i].type == "Line") {
+											scene.children[i].material.opacity = 0.4;
+										}
+									}
+									clickedObj = null;
+									tooltipSprite.visible = false;
 								}
 							}
-							clickedObj = null;
-							tooltipSprite.visible = false;
+						}
+					}
+					else {
+						if (mouse.x < .617 || mouse.y < .862) {
+							if (intersects.length != 0) {
+								if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
+									if (intersects[0].object.name != "tooltip") {
+										clickedObj = intersects[0].object.name;
+										satDict[clickedObj].material.opacity = 1.0;
+										metrics = g.measureText(clickedObj);
+										g.clearRect(0,0,bitmap.width, bitmap.height);
+										g.fillStyle = 'white';
+										g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+										g.strokeStyle = 'black';
+										g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+										tooltipSprite.material.map.needsUpdate = true;
+										tooltipSprite.renderOrder = 100;
+										tooltipSprite.position.copy(intersects[0].point);
+										tooltipSprite.visible = true;
+									}
+								}
+								else {
+									for (var i = 1; i < scene.children.length; i++) {
+										if (scene.children[i].type == "Line") {
+											scene.children[i].material.opacity = 0.4;
+										}
+									}
+									clickedObj = null;
+									tooltipSprite.visible = false;
+								}
+							}
 						}
 					}
 				}
 			}
 		}
 		catch(e) {}
+	}, false);
+	document.addEventListener('visibilitychange', function () {
+		if (nextRuns) {
+			console.log("working");
+			if (!document.hidden) {
+				fetch('/comm', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify ({
+						"latitude": sites[0][1][0],
+						"longitude": sites[0][1][1]
+					})
+				}).then(res => res.json())
+				.then(function (jsonData) {
+					//the request's response is assigned to jsonData, and separated out to be used later.
+					satData = [];
+					horizon = [];
+					sunArr = [];
+					
+					numCraft = jsonData.numSats;
+					numOrbitalPts = jsonData.OP;
+					spacecraft = jsonData.satKeys;
+					var tm = jsonData.time;
+					satTime = new Date(tm[0], tm[1]-1, tm[2]-1, tm[3]+18, tm[4]+1, tm[5]).getTime();
+					sites = jsonData.sites;
+					sunArr = jsonData.sun;
+					
+					for (var i = 0; i < spacecraft.length; i++) {
+						var craft = jsonData[spacecraft[i]];
+						pos = craft.pos;
+						pos = [spacecraft[i], pos];
+						satData.push(pos);
+						h = craft.horizon;
+						for (var j = 0; j < h.length; j++) {
+							h[j] = h[j][1];
+						}
+						horizon.push(h);
+					}
+					satPath();
+				});
+			}
+		}
 	}, false);
 	
 	//prevents the arrow keys from being used

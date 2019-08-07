@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 import TLE
 from datetime import datetime, timedelta
+from spacetrack import SpaceTrackClient
 
 ST = []
 access = None
@@ -13,7 +14,6 @@ def index():
     
 @app.route('/comm', methods=['POST'])
 def info():
-    global refresh
     latLon = request.get_json()
     location = []
     location.append(latLon['latitude'])
@@ -23,16 +23,21 @@ def info():
         timeOld = f.read().split('\n')
         timeOld[0] = datetime.strptime(timeOld[0], '%Y-%m-%d %H:%M:%S.%f')
         timeOld[1] = datetime.strptime(timeOld[1], '%Y-%m-%d %H:%M:%S.%f')
-    TLE.timeInfo(timeNow, timeOld[0], ST)
+    timeOld[0] = TLE.timeInfo(timeNow, timeOld[0], ST)
     if timeNow < timeOld[1]:
         jData = TLE.comp(location, None)
     else:
-        jData = TLE.comp(location, timeOld[1])
+        jData = TLE.comp(location, timeOld)
     return jData, 200
 
 @app.route('/access', methods=['POST'])
 def access():
     return access, 200
+
+@app.route('/wrong', methods=['POST'])
+def updateWrongAccess():
+    print("Invalid ipstack access key. Please try again.")
+    access = input("ipstack access key: ")
 
 if __name__ == '__main__':
     print("This application requires that you have a free account with both space-track.org and ipstack.com")
