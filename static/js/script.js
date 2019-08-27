@@ -841,7 +841,7 @@
 					satData = [];
 					horizon = [];
 					sunArr = [];
-					
+					sunPos = [];
 					numCraft = jsonData.numSats;
 					numOrbitalPts = jsonData.OP;
 					spacecraft = jsonData.satKeys;
@@ -861,6 +861,27 @@
 						}
 						horizon.push(h);
 					}
+					var currentTime = Date.now();
+					var timeDiff = Math.floor((currentTime-satTime)/60000) - 1;
+					//positions the directional light so it is above the same point on the earth as the sun
+					var r, lat, lon, x, y, z;
+					r = 20;
+					for (var i = 0; i < sunArr.length; i++) {
+						lat = sunArr[i][0];
+						lon = sunArr[i][1];
+						var phi = (90-lat)*(Math.PI/180);
+						var theta = (lon+180)*(Math.PI/180);
+
+						x = -((r) * Math.sin(phi)*Math.cos(theta));
+						z = ((r) * Math.sin(phi)*Math.sin(theta));
+						y = ((r) * Math.cos(phi));
+						var vert = new THREE.Vector3(x, y, z);
+						sunPos.push(vert);
+						if (i == timeDiff) {
+							light.position.set(x,y,z);
+						}
+					}
+					light.needsUpdate = true;
 					satPath();
 				});
 			}
