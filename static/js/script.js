@@ -30,8 +30,9 @@
 	var uniforms; //used for the day/night shader
 	var clickLoc = new THREE.Vector2(); //used in the 'mouseup' eventlistener
 	
-	firstRun = true; //boolean to determine whether this is the first time we are asking for orbit calculations
-	nextRuns = false; //boolean to determine whether we are now past the first orbit calculation
+	var firstRun = true; //boolean to determine whether this is the first time we are asking for orbit calculations
+	var nextRuns = false; //boolean to determine whether we are now past the first orbit calculation
+	var vis = false;
 	
 	var t = new Date();
 	t.setHours(0);
@@ -235,7 +236,10 @@
 			else {
 				sat.visible = false;
 				img.visible = false;
-				tooltipSprite.visible = false;
+				if (sat.name == clickedObj) {
+					tooltipSprite.visible = false;
+				}
+				
 				sat.material.opacity = 0.4;
 			}
 			allButton = 'allCheck';
@@ -560,6 +564,10 @@
 			var checkboxes = document.getElementsByClassName("gsCheck");
 			checkForAllChecked(checkboxes, "gsAll", "gsCheck");
 		}
+		/*if (vis) {
+			vis = false;
+			$('body').addClass('loaded');
+		}*/
 	}
 	
     function init() {
@@ -577,6 +585,45 @@
 		craftList();
 		createEarth();
     }
+	
+	function updateData(jsonData) {
+		//the request's response is assigned to jsonData, and separated out to be used later.
+		satData = [];
+		horizon = [];
+		sunArr = [];
+		
+		numCraft = jsonData.numSats;
+		numOrbitalPts = jsonData.OP;
+		spacecraft = jsonData.satKeys;
+		var tm = jsonData.time;
+		//to get the correct UTC time for satTime, subtract a month and a day, add 18 hours and add 1 minute.
+		// JavaScript counts months from 0-11, while python counts them from 1-12.
+		satTime = new Date(tm[0], tm[1]-1, tm[2]-1, tm[3]+18, tm[4]+1, tm[5]).getTime();
+		sites = jsonData.sites;
+		sunArr = jsonData.sun;
+		
+		for (var i = 0; i < spacecraft.length; i++) {
+			var craft = jsonData[spacecraft[i]];
+			pos = craft.pos;
+			pos = [spacecraft[i], pos];
+			satData.push(pos);
+			h = craft.horizon;
+			for (var j = 0; j < h.length; j++) {
+				h[j] = h[j][1];
+			}
+			horizon.push(h);
+		}
+		/*if this is run when the application is first starting up, run init(). Otherwise, replace
+		previous orbit paths with the new data by using satPath(). Any time the webpage is refreshed,
+		firstRun will be set to true again.*/
+		if (firstRun) {
+			firstRun = false;
+			init();
+		}
+		else {
+			satPath();
+		}
+	}
 	
 	//checks to see if the mouse is hovering over an element on the canvas
     function checkForRaycasts() {
@@ -627,54 +674,27 @@
 			$.getJSON('http://api.ipstack.com/check?access_key='+accKey, function(data) {
 				//sends a request to the /comm url in main.py and requests orbital data. The user's
 				//longitude and latitude are sent with to calculate data based off their location.
-				fetch('/comm', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify ({
-						"latitude": data['latitude'],
-						"longitude": data['longitude']
-					})
-				}).then(res => res.json())
-				.then(function (jsonData) {
-					//the request's response is assigned to jsonData, and separated out to be used later.
-					satData = [];
-					horizon = [];
-					sunArr = [];
-					
-					numCraft = jsonData.numSats;
-					numOrbitalPts = jsonData.OP;
-					spacecraft = jsonData.satKeys;
-					var tm = jsonData.time;
-					//to get the correct UTC time for satTime, subtract a month and a day, add 18 hours and add 1 minute.
-					// JavaScript counts months from 0-11, while python counts them from 1-12.
-					satTime = new Date(tm[0], tm[1]-1, tm[2]-1, tm[3]+18, tm[4]+1, tm[5]).getTime();
-					sites = jsonData.sites;
-					sunArr = jsonData.sun;
-					
-					for (var i = 0; i < spacecraft.length; i++) {
-						var craft = jsonData[spacecraft[i]];
-						pos = craft.pos;
-						pos = [spacecraft[i], pos];
-						satData.push(pos);
-						h = craft.horizon;
-						for (var j = 0; j < h.length; j++) {
-							h[j] = h[j][1];
-						}
-						horizon.push(h);
+				if(data['success'] == false) {
+					if(data["error"]["code"] == 101) {
+						console.log(data["error"]["info"]);
+						//TODO: add a modal that pops up to get a correct ipstack key, and try again.
 					}
-					/*if this is run when the application is first starting up, run init(). Otherwise, replace
-					previous orbit paths with the new data by using satPath(). Any time the webpage is refreshed,
-					firstRun will be set to true again.*/
-					if (firstRun) {
-						firstRun = false;
-						init();
-					}
-					else {
-						satPath();
-					}
-				});
+				}
+				else {
+					fetch('/comm', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify ({
+							"latitude": data['latitude'],
+							"longitude": data['longitude']
+						})
+					}).then(res => res.json())
+					.then(function (jsonData) {
+						updateData(jsonData);
+					});
+				}
 			});
 		});
 	}
@@ -692,10 +712,60 @@
 		if (new Date().getTime() > t.getTime()) {
 			t.setHours(t.getHours() + 6);
 			nextRuns = true;
+			/*if (vis) {
+				$('body').removeClass('loaded');
+			}*/
 			calculate();
 		}
         renderer.render(scene, camera);
     }
+	
+	function getLocTime() {
+		//TODO: show time the spacecraft will pass by the point of a satellite path clicked on
+	}
+	
+	function mouseUpHelper(x, y, intersects) {
+		if (mouse.x < x || mouse.y < y) {
+			//if we are actually intersecting something with the raycaster
+			if (intersects.length != 0) {
+				//console.log(intersects[0].point); //used to show the x,y,z coordinate of the mouse click
+				if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
+					if (intersects[0].object.name != "tooltip") {
+						// only first intersect
+						clickedObj = intersects[0].object.name;
+						satDict[clickedObj].material.opacity = 1.0;
+						/*the bitmap canvas contents will be used for a texture. The name of the
+						clicked spacecraft image or path will be used as the contents of the bitmap canvas.*/
+						metrics = g.measureText(clickedObj);
+						g.clearRect(0,0,bitmap.width, bitmap.height);
+						g.fillStyle = 'white';
+						g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+						g.strokeStyle = 'black';
+						g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
+						tooltipSprite.material.map.needsUpdate = true;
+						//renders the sprite after the orbit paths so the sprite doesn't cut out any
+						// of the visible satellite paths
+						tooltipSprite.renderOrder = 100;
+						tooltipSprite.position.copy(intersects[0].point);
+						tooltipSprite.visible = true;
+					}
+					else {
+						//clicking on the tooltipsprite will hide it
+						if (tooltipSprite.visible) tooltipSprite.visible = false;
+					}
+				}
+				else {
+					for (var i = 1; i < scene.children.length; i++) {
+						if (scene.children[i].type == "Line") {
+							scene.children[i].material.opacity = 0.4;
+						}
+					}
+					clickedObj = null;
+					tooltipSprite.visible = false;
+				}
+			}
+		}
+	}
 	
 	document.querySelector('#gsAll').onclick = function (ev) {
 		try{checkAll(ev.target.checked, 'gsCheck');}
@@ -748,145 +818,32 @@
 				raycaster.setFromCamera(mouse, camera);
 				//calculate objects intersecting the picking ray
 				var intersects = raycaster.intersectObjects(scene.children);
-				if (mouse.x > -.68) {
+				//if the mouse's x position is farther right than the checkbox menus
+				if (mouse.x > -.668) {
+					//if the About checkbox is currently checked
 					if (document.getElementById("check").checked) {
-						if (mouse.x < .327 || mouse.y < .25) {
-							//only first intersect
-							if (intersects.length != 0) {
-								//console.log(intersects[0].point); //used to show the x,y,z coordinate of the mouse click
-								if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
-									if (intersects[0].object.name != "tooltip") {
-										clickedObj = intersects[0].object.name;
-										satDict[clickedObj].material.opacity = 1.0;
-										/*the bitmap canvas contents will be used for a texture. The name of the
-										clicked spacecraft image or path will be used as the contents of the bitmap canvas.*/
-										metrics = g.measureText(clickedObj);
-										g.clearRect(0,0,bitmap.width, bitmap.height);
-										g.fillStyle = 'white';
-										g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-										g.strokeStyle = 'black';
-										g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-										tooltipSprite.material.map.needsUpdate = true;
-										//renders the sprite after the orbit paths so the sprite doesn't cut out any
-										// of the visible satellite paths
-										tooltipSprite.renderOrder = 100;
-										tooltipSprite.position.copy(intersects[0].point);
-										tooltipSprite.visible = true;
-									}
-								}
-								else {
-									for (var i = 1; i < scene.children.length; i++) {
-										if (scene.children[i].type == "Line") {
-											scene.children[i].material.opacity = 0.4;
-										}
-									}
-									clickedObj = null;
-									tooltipSprite.visible = false;
-								}
-							}
-						}
+						//if the mouse is not over the About popup
+						mouseUpHelper(.327, .335, intersects);
 					}
+					//if the About checkbox is not checked
 					else {
-						if (mouse.x < .617 || mouse.y < .862) {
-							if (intersects.length != 0) {
-								if (intersects[0].object.type == "Line" || intersects[0].object.type == "Sprite") {
-									if (intersects[0].object.name != "tooltip") {
-										clickedObj = intersects[0].object.name;
-										satDict[clickedObj].material.opacity = 1.0;
-										metrics = g.measureText(clickedObj);
-										g.clearRect(0,0,bitmap.width, bitmap.height);
-										g.fillStyle = 'white';
-										g.fillText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-										g.strokeStyle = 'black';
-										g.strokeText(clickedObj, (bitmap.width/2)-(metrics.width/2), (bitmap.height/2));
-										tooltipSprite.material.map.needsUpdate = true;
-										tooltipSprite.renderOrder = 100;
-										tooltipSprite.position.copy(intersects[0].point);
-										tooltipSprite.visible = true;
-									}
-								}
-								else {
-									for (var i = 1; i < scene.children.length; i++) {
-										if (scene.children[i].type == "Line") {
-											scene.children[i].material.opacity = 0.4;
-										}
-									}
-									clickedObj = null;
-									tooltipSprite.visible = false;
-								}
-							}
-						}
+						// if the mouse is not over the blue About checkbox
+						mouseUpHelper(.617, .881, intersects);
 					}
 				}
 			}
 		}
 		catch(e) {}
 	}, false);
-	document.addEventListener('visibilitychange', function () {
-		if (nextRuns) {
-			console.log("working");
-			if (!document.hidden) {
-				fetch('/comm', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify ({
-						"latitude": sites[0][1][0],
-						"longitude": sites[0][1][1]
-					})
-				}).then(res => res.json())
-				.then(function (jsonData) {
-					//the request's response is assigned to jsonData, and separated out to be used later.
-					satData = [];
-					horizon = [];
-					sunArr = [];
-					sunPos = [];
-					numCraft = jsonData.numSats;
-					numOrbitalPts = jsonData.OP;
-					spacecraft = jsonData.satKeys;
-					var tm = jsonData.time;
-					satTime = new Date(tm[0], tm[1]-1, tm[2]-1, tm[3]+18, tm[4]+1, tm[5]).getTime();
-					sites = jsonData.sites;
-					sunArr = jsonData.sun;
-					
-					for (var i = 0; i < spacecraft.length; i++) {
-						var craft = jsonData[spacecraft[i]];
-						pos = craft.pos;
-						pos = [spacecraft[i], pos];
-						satData.push(pos);
-						h = craft.horizon;
-						for (var j = 0; j < h.length; j++) {
-							h[j] = h[j][1];
-						}
-						horizon.push(h);
-					}
-					var currentTime = Date.now();
-					var timeDiff = Math.floor((currentTime-satTime)/60000) - 1;
-					//positions the directional light so it is above the same point on the earth as the sun
-					var r, lat, lon, x, y, z;
-					r = 20;
-					for (var i = 0; i < sunArr.length; i++) {
-						lat = sunArr[i][0];
-						lon = sunArr[i][1];
-						var phi = (90-lat)*(Math.PI/180);
-						var theta = (lon+180)*(Math.PI/180);
-
-						x = -((r) * Math.sin(phi)*Math.cos(theta));
-						z = ((r) * Math.sin(phi)*Math.sin(theta));
-						y = ((r) * Math.cos(phi));
-						var vert = new THREE.Vector3(x, y, z);
-						sunPos.push(vert);
-						if (i == timeDiff) {
-							light.position.set(x,y,z);
-						}
-					}
-					light.needsUpdate = true;
-					satPath();
-				});
+	
+	//the following doesn't currently work
+	/*document.addEventListener('visibilitychange', function () {
+		if (document.visibilityState == 'visible') {
+			if (new Date().getTime() > t.getTime()) {
+				vis = true;
 			}
 		}
-	}, false);
+	}, false);*/
 	
 	//prevents the arrow keys from being used
 	window.addEventListener("keydown", function(e) {

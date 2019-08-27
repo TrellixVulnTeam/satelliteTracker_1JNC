@@ -1,0 +1,8 @@
+1. Add a modal that pops up when ipstack or space-track
+information is incorrect. (script.js:680)
+2. Either update location of tooltipsprite when orbits
+are updated or change tooltipsprite to appear on hover.
+3. Verify that orbits update correctly after extended
+use.
+4. Show the time that a satellite will pass by a point on
+an orbit that has been clicked. (script.js:724)
