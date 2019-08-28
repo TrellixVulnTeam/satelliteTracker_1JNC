@@ -6,3 +6,5 @@ are updated or change tooltipsprite to appear on hover.
 use.
 4. Show the time that a satellite will pass by a point on
 an orbit that has been clicked. (script.js:724)
+5. When orbits are updated every 6 hours, the Sun's 
+position is moved back in time and isn't correct.
