@@ -14,6 +14,6 @@ The node_electronjs branch is the one I will be working on going forward, and wi
     
    A better orbital propogation library, with documentation fully read this time. The current plan is to use the SPICE toolkit, either in Java or using a Python wrapper. More information on the toolkit here: https://naif.jpl.nasa.gov/naif/index.html
    
-\
+ 
     
 To sum it up, space has always been a passion of mine. I always wanted to be an astronaut or work with NASA in some way. Coding is another huge passion of mine. So after getting some experience working with orbital mechanics in a professional setting, I decided it was time to combine these two passions into a fun project to show what I've learned.
