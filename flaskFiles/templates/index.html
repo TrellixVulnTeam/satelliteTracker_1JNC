@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <title>Satellite Tracker</title>
+	<link rel="shortcut icon" href="static/img/burnearth.ico" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='js/three.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/d3.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/OrbitControls.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }} " type="text/javascript" charset="utf-8" async defer></script>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+	<div class="menu" id="menu">
+		<input type="checkbox" id="check" style="opacity: 0;">
+		<label for="check" class="button" id="about">
+			<span></span>
+			<span></span>
+			<span></span>
+		</label>
+		<nav>
+			<hr><p class="thick">About The Satellite Tracker</p><hr>
+			<p>Controls:</p>
+			<p><span class="tab">Click and drag to move the globe around</span></p>
+			<p><span class="tab">Press the space bar to start/stop camera rotation around the globe.</span></p>
+			<p><span class="tab">Scroll on the satellite or groundsite list to view all selectable options</span></p>
+			<p><span class="tab">Click on the checkbox next to a satellite or groundsite name to turn that
+			satellite's path or groundsite location on or off</span></p>
+			<p><span class="tab">Scroll with the mouse to zoom in and out</span></p>
+			<p><span class="tab">Click on the path of a satellite to highlight it. Click the path again
+			or select another satellite path to deselect it.</span></p><hr>
+			<p>About:</p>
+			<p><span class="tab">This project tracks 100 different satellites in their orbits around the earth,
+			with 15 groundsites on the earth's surface. The point of the project is to visualize
+			satellite paths in 3D, while also showing where those paths are visible to different
+			points on the earth.</span></p>
+			<p><span class="tab">The application allows for the user to select and view satellite orbits, and
+			the path shown is a 24 hour snapshot of the satellite's future path.
+			The user can also select a ground site to show where the satellite's orbit will be
+			visible to that location on the earth. The project also uses a light shining on the globe
+			to show which parts of the earth are currently in daylight.</span></p>
+			<p><span class="tab">Some of the high earth orbits will look a little crazy, which is expected.
+			This globe doesn't rotate independently beneath the satellites. This means the orbits can start to
+			look odd because the path shows where in relation to the non-rotating earth each satellite will be at a
+			given time. It would look more normal had I opted to create an elliptical path for each satellite
+			based on the TLE information gathered, but I thought this was more interesting.</span></p>
+			<hr>
+		</nav>
+	</div>
+	<script>document.getElementById("about").style.opacity = "0";</script>
+	<div class="sidenav topTitle" id="gsTitle">
+		<p><h1>GroundSites</h1></p>
+		<label>All<input type="checkbox" id="gsAll"></label>
+		<br>
+	</div>
+	<div class="sidenav topContent" id = "gsnav">
+		<div id = "listgs"></div>
+	</div>
+	<div class="sidenav bottomTitle" id = "spacecraftTitle">
+	<p><h1>Spacecraft</h1></p>
+		<label>All<input type="checkbox" id="allCheck"></label>
+		<br>
+	</div>
+	<div class="sidenav bottomContent" id = "craftnav">
+		<div id = "listCraft"></div>
+	</div>
+	<div id="loading-wrapper">
+		<div id="loading-text">LOADING</div>
+		<div id="loading-content"></div>
+	</div>
+  </body>
+</html>
