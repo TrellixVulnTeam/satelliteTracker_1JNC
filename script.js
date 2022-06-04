@@ -1,31 +1,62 @@
 (function (window, document, undefined) {
+    THREE = require('./three.js/build/three.js');
+    CSS2DRenderer = require('./three.js/examples/js/renderers/CSS2DRenderer.js');
+    Gyroscope = require('./three.js/examples/js/controls/OrbitControls.js');
+
+
     var camera, fakeCamera, controls, scene, renderer, labelRenderer;
-    var  moon, light;
+    var  moon, sun, earth, eclipse, light;
     var angle = 0;
     var angle2 = 0;
     var textureLoader;
     var manager = new THREE.LoadingManager();
     manager.onLoad = function() {openSideBar;}
-    var target = new THREE.Vector3();
-    var arrowH;
+    var localSun = new THREE.Vector3(0, 0, -23481);
 
-    //for debugging
+    //used to send logs to VSCode console
     var nodeConsole = require('console');
     var myConsole = new nodeConsole.Console(process.stdout, process.stderr);
 
 
+    /**
+     * @param scene  main scene that is added to the window. Everything else will be attached to the scene in some way
+     * @param light  a directional light to serve as sunlight in the scene
+     * @param sun  a mesh object that acts as a visual representation of the sun
+     * @param earth  a mesh showing the landmasses and oceans of earth, will be updated to show realtime position relative to the sun
+     * @param moon  a mesh that orbits the earth, will be updated to show position in real time
+     * @param starfield  sphere mesh with a texture of a starscape on the inside, meant to add star visuals
+     * @param camera  used along with fakeCamera to allow the camera to focus on the earth instead of the sun
+     * @param fakeCamera  used along with fakeCamera to allow the camera to focus on the earth instead of the sun
+     * @param ambLight  an ambient light set so that the unlit sides of the moon and earth are still visible
+     */
     function buildScene() {
         scene = new THREE.Scene();
         
         light = new THREE.DirectionalLight(0xffffff, 2);
         light.position.set(0,0,0);
-        sun = createSun("img/sun.jpg", 1009.2984);
-        moon = createMoon("img/moon.jpg", .2725, 10);
-        earth = createEarth("img/earth.jpg", "img/earthNight.jpg", null, 1, 23455);
+
+        sun = createSun("img/sun.jpg", 109.2984);
+        
+        moon = createMoon("img/moon.jpg", .2725, 60.33);
+        
+        earth = createEarth("img/earth.jpg", "img/earthNight.jpg", null, 1, localSun.z);
+
+        eclipse = createEclipseSphere(1.01, localSun.z);
+
+        
         
         starField = createStarScape("img/milkyWay.jpg");
 
+        /*var dotGeometry = new THREE.Geometry();
+        dotGeometry.vertices.push(new THREE.Vector3( 0, 0, 0));
+        var dotMaterial = new THREE.PointsMaterial( { size: 1, sizeAttenuation: false } );
+        var dot = new THREE.Points( dotGeometry, dotMaterial );*/
+
         //light.shadow.bias = 0.00005;
+
+        ambLight = new THREE.AmbientLight( 0x909090 ); // soft white light
+        scene.add( ambLight );
+
         light.castShadow = true;
         light.shadow.camera.near = 0.5;       
         light.shadow.camera.far = 500000;
@@ -37,14 +68,14 @@
         ambLight = new THREE.AmbientLight( 0x202020 );
         scene.add(ambLight);
 
+        /*myConsole.log(shaderEarth.position, sun.position);
+        myConsole.log(sun.worldToLocal(shaderEarth.position));*/
+        light.add(earth);
+        light.add(eclipse);
+
+        earth.add(camera);
+        earth.add(moon);
         
-        sun.attach(earth);
-
-        var camGyro = new THREE.Gyroscope();
-        camGyro.add(camera);
-
-        earth.add(camGyro);
-        earth.attach(moon);
     }
 
     function init() {
@@ -55,6 +86,7 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+        
 
         labelRenderer = new THREE.CSS2DRenderer();
         labelRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -63,27 +95,33 @@
         labelRenderer.domElement.style.pointerEvents = 'none';
         document.body.appendChild(labelRenderer.domElement);
 
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200000);
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 875000);
         camera.layers.enableAll();
         camera.position.set(-10, 3, 0);
         camera.lookAt(0, 0, 0);
 
         buildScene();
+        
 
         fakeCamera = camera.clone();
         fakeCamera.layers.enableAll();
         controls = new THREE.OrbitControls(fakeCamera, renderer.domElement);
         controls.enablePan = false;
         controls.enableDamping = false;
+        controls.minDistance = 1.5;
+        controls.maxDistance = 100;
     }
 
     function animate(time) {
 
-        angle = (angle + .002) % (2 * Math.PI);
-        rotateBody(earth, angle, earth.userData["distanceToParent"]);
-        target = earth.position;
+        angle = (angle + .0002) % (2 * Math.PI);
+        rotateBody(earth, 3*angle, earth.userData["distanceToParent"]);
+        rotateBody(eclipse, 3*angle, eclipse.userData["distanceToParent"]);
+        localSun.copy(earth.position).multiplyScalar(-1);
         angle2 = (angle2 + .007) % (2 * Math.PI);
+        moon.rotation.y += (.0035 % (2 * Math.PI));
         rotateBody(moon, -1*angle2, moon.userData["distanceToParent"]);
+        rotateBody(sun, -2*angle, .0001);
         camera.copy(fakeCamera);
 
         render();
@@ -123,7 +161,7 @@
         //used for the shader to show the parts of the earth where it is currently day and night
 		uniforms = {
             sunDirection: {
-                value: moon.position
+                value: localSun
             },
             /*sunIntensity: {
                 value: light.intensity
@@ -188,15 +226,29 @@
 
         const body = new THREE.Mesh(geometry, material);
         body.castShadow = true;
-        body.receiveShadow = true;
         body.position.set(0, 0, distance);
         body.userData = {"distanceToParent" : distance};
         //body.scale.set(.3, .3, .3);
-        body.name = "Earth"
+        body.name = "Earth";
         body.layers.set(1);
         //body.add(makeTextLabel(name));
+
         return body;
 
+    }
+
+    function createEclipseSphere(radius, distance) {
+        const eclispeGeometry = new THREE.SphereGeometry(radius, 64, 64);
+        const eclipseMaterial = new THREE.ShadowMaterial();
+        eclipseMaterial.opacity = 0.75;
+        const body = new THREE.Mesh(eclispeGeometry, eclipseMaterial);
+        body.receiveShadow = true;
+        body.position.set(0, 0, distance);
+        body.userData = {"distanceToParent" : distance};
+        body.name = "Eclipse";
+        body.layers.set(1);
+
+        return body;
     }
 
     function createSun(texturePath, radius) {
@@ -206,12 +258,12 @@
         const body = new THREE.Mesh(geometry, material);
         body.name = "Sun";
         body.layers.set(1);
-        body.position.set(0,0,0)
+        body.position.set(0,0,.0001)
         return body;
     }
 
     function createStarScape(texturePath) {
-        var geometry = new THREE.SphereGeometry(500000, 32, 32);
+        var geometry = new THREE.SphereGeometry(850000, 32, 32);
         const texture = new THREE.TextureLoader().load(texturePath);
         const starMat = new THREE.MeshBasicMaterial({color: 0xffffff, map: texture, side: THREE.BackSide});
         const starField = new THREE.Mesh(geometry, starMat);

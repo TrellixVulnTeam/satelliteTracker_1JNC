@@ -3,75 +3,14 @@
 	<head>
 		<title>Satellite Tracker</title>
 		<link rel="stylesheet" type="text/css" href="css/style.css">
-		<script src="three.js/build/three.js"></script>
-        <script src="three.js/examples/js/misc/Gyroscope.js"></script>
-        <script src="three.js/examples/js/controls/OrbitControls.js"></script>
-        <script src="three.js/examples/js/renderers/CSS2DRenderer.js"></script>
-        
 	</head>
 	<body>
         <canvas id="scene"></canvas>
-		<div class="menu" id="menu">
-			<input type="checkbox" id="check" style="opacity: 0;">
-			<label for="check" class="button" id="about">
-				<span></span>
-				<span></span>
-				<span></span>
-			</label>
-			<nav>
-				<hr><p class="thick">About The Satellite Tracker</p><hr>
-				<p>Controls:</p>
-				<p><span class="tab">Click and drag to move the globe around</span></p>
-				<p><span class="tab">Press the space bar to start/stop camera rotation around the globe.</span></p>
-				<p><span class="tab">Scroll on the satellite or groundsite list to view all selectable options</span></p>
-				<p><span class="tab">Click on the checkbox next to a satellite or groundsite name to turn that
-				satellite's path or groundsite location on or off</span></p>
-				<p><span class="tab">Scroll with the mouse to zoom in and out</span></p>
-				<p><span class="tab">Click on the path or image of a satellite or the to highlight it. Click 
-				off the satellite path or image to deselect it.</span></p><hr>
-				<p>About:</p>
-				<p><span class="tab">This project tracks 100 different satellites in their orbits around the earth,
-				with 10 groundsites on the earth's surface. The point of the project is to visualize
-				satellite paths in 3D, while also showing where those paths are visible to different
-				points on the earth.</span></p>
-				<p><span class="tab">The application allows for the user to select and view satellite orbits, and
-				the path shown is a 12 hour snapshot of the satellite's future path.
-				A ground site can also be selected to show where a satellite's orbit will be
-				visible to that location on the earth. The project also uses a shader to show day and night on the 
-				earth.</span></p>
-				<p><span class="tab">Some of the orbits, especially high earth orbits, will look a little odd, and 
-				this is expected. This globe doesn't rotate independently beneath the satellites. Because of this, 
-				the orbits may look different than expected as they stay accurate to which parts of the earth they 
-				are above at given times. It would look more like what we are used to when viewing a 3D orbit had I 
-				opted to create an elliptical path for each satellite. Because the purpose of the project was to 
-				use the TLE data for each satellite to show as accurately as possible where each satellite will be 
-				in relation to the earth's surface, I opted for what you see now. This was also more interesting 
-				to work with.</span></p>
-				<hr>
-			</nav>
-		</div>
 		<script>document.getElementById("about").style.opacity = "0";</script>
-		<div class="sidenav topTitle" id="gsTitle">
-			<p><h1>GroundSites</h1></p>
-			<label>All<input type="checkbox" id="gsAll"></label>
-			<br>
-		</div>
-		<div class="sidenav topContent" id = "gsnav">
-			<div id = "listgs"></div>
-		</div>
-		<div class="sidenav bottomTitle" id = "spacecraftTitle">
-		<p><h1>Spacecraft</h1></p>
-			<label>All<input type="checkbox" id="allCheck"></label>
-			<br>
-		</div>
-		<div class="sidenav bottomContent" id = "craftnav">
-			<div id = "listCraft"></div>
-		</div>
 		<div id="loading-wrapper">
 			<div id="loading-text">LOADING</div>
 			<div id="loading-content"></div>
 		</div>
-		<div id='textSprite'></div>
 		<script src="script.js" type="text/javascript" charset="utf-8" async defer></script>
 	</body>
 </html>
